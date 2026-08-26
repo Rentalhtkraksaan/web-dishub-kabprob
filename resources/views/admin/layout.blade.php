@@ -132,10 +132,6 @@
                         <i class="fas fa-home text-sm text-blue-400"></i> Dashboard Utama
                     </a>
 
-                    <a href="{{ route('admin.dashboard') }}#visitorChart-container" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all hover:bg-slate-800 text-slate-300">
-                        <i class="fas fa-chart-line text-sm text-emerald-400"></i> Statistik Pengunjung
-                    </a>
 
                     <a href="{{ route('admin.documents') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.documents') ? 'bg-blue-700 text-white shadow-md shadow-blue-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
