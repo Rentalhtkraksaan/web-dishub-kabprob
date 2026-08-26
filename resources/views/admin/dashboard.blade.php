@@ -95,9 +95,9 @@
 
                 <!-- Tabs Chart Type -->
                 <div class="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-bold">
-                    <button @click="changeType('weekly')" :class="{'bg-white shadow-sm text-blue-700': type === 'weekly', 'text-slate-500 hover:text-slate-700': type !== 'weekly'}" class="px-3 py-1.5 rounded-lg transition-all">Mingguan</button>
-                    <button @click="changeType('monthly')" :class="{'bg-white shadow-sm text-blue-700': type === 'monthly', 'text-slate-500 hover:text-slate-700': type !== 'monthly'}" class="px-3 py-1.5 rounded-lg transition-all">Bulanan</button>
-                    <button @click="changeType('yearly')" :class="{'bg-white shadow-sm text-blue-700': type === 'yearly', 'text-slate-500 hover:text-slate-700': type !== 'yearly'}" class="px-3 py-1.5 rounded-lg transition-all">Tahunan</button>
+                    <button @click="changeType('weekly')" :class="{'bg-white shadow-sm text-blue-700': type === 'weekly', 'text-slate-500 hover:text-slate-700': type !== 'weekly'}" class="px-3 py-1.5 rounded-lg transition-all">Harian</button>
+                    <button @click="changeType('monthly')" :class="{'bg-white shadow-sm text-blue-700': type === 'monthly', 'text-slate-500 hover:text-slate-700': type !== 'monthly'}" class="px-3 py-1.5 rounded-lg transition-all">Mingguan</button>
+                    <button @click="changeType('yearly')" :class="{'bg-white shadow-sm text-blue-700': type === 'yearly', 'text-slate-500 hover:text-slate-700': type !== 'yearly'}" class="px-3 py-1.5 rounded-lg transition-all">Bulanan</button>
                 </div>
             </div>
         </div>
