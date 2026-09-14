@@ -206,3 +206,5 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
     });
 
 });
+R o u t e : : g e t ( ' / d e b u g - p a t h ' ,   f u n c t i o n   ( )   {   r e t u r n   r e s p o n s e ( ) - > j s o n ( [ ' p u b l i c _ p a t h '   = >   p u b l i c _ p a t h ( ) ,   ' b a s e _ p a t h '   = >   b a s e _ p a t h ( ) ,   ' p u b l i c _ h t m l _ e x i s t s '   = >   i s _ d i r ( d i r n a m e ( b a s e _ p a t h ( ) )   .   ' / p u b l i c _ h t m l ' ) ,   ' d o c u m e n t _ r o o t '   = >   \ [ ' D O C U M E N T _ R O O T ' ]   ? ?   ' N o t   s e t ' ] ) ;   } ) ;  
+ 
