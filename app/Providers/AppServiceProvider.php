@@ -15,14 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Memastikan public_path() mengarah ke public_html jika di-hosting di cPanel
-        $this->app->bind('path.public', function() {
-            $publicHtml = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
-            if (is_dir($publicHtml)) {
-                return $publicHtml;
-            }
-            return base_path('public');
-        });
+        //
     }
 
     /**
