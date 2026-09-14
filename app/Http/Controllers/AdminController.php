@@ -293,7 +293,7 @@ class AdminController extends Controller
             $file = $request->file('image_file');
             $filename = time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads/banners'), $filename);
-            $imageUrl = url('uploads/banners/' . $filename);
+            $imageUrl = '/uploads/banners/' . $filename;
         }
 
         if (!$imageUrl) {
@@ -345,7 +345,7 @@ class AdminController extends Controller
             $file = $request->file('image_file');
             $filename = time() . '_' . \Illuminate\Support\Str::random(8) . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads/banners'), $filename);
-            $imageUrl = url('uploads/banners/' . $filename);
+            $imageUrl = '/uploads/banners/' . $filename;
         }
 
         $slider->update([
