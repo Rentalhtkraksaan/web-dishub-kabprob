@@ -598,84 +598,67 @@
         </main>
 
         		<!-- ftAreaWrap -->
-		<div class="ftAreaWrap position-relative bg-gDark fontAlter">
-			<a id="back-to-top" href="#" class="btn btn-warning btn-lg back-to-top shadow-lg rounded-circle" role="button" title="Kembali ke atas"><i class="fas fa-chevron-up text-dark"></i></a>
-			
-			<aside class="footerAside py-5 py-md-6" style="background: linear-gradient(180deg, #0f172a 0%, #09101d 100%);">
+		<div class="ftAreaWrap position-relative fontAlter" style="background-color: #1e3a5f;">
+			<aside class="footerAside py-5 py-md-5">
 				<div class="container">
 					<div class="row align-items-start">
 						
 						<!-- Left Col: Logo & Deskripsi Instansi -->
-						<div class="col-12 col-sm-6 col-md-5 col-xl-5 mb-4 mb-md-0">
+						<div class="col-12 col-md-5 mb-4 mb-md-0 pr-md-5">
 							<div class="ftLogo mb-4">
 								<a href="{{ route('home') }}" class="d-inline-flex align-items-center text-decoration-none">
-									<img src="{{ $settings['logo_frontend'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/logo_frontend.png' }}" class="img_footer shrink-0" alt="DISHUB" style="max-height: 54px; width: auto;">
-									<div class="ml-4 pl-4 text-left" style="border-left: 2px solid rgba(255, 255, 255, 0.2) !important; line-height: 1.25;">
-										<span class="d-block font-weight-extrabold text-uppercase text-white" style="font-size: 1rem; letter-spacing: 0.6px; font-family: 'Outfit', sans-serif;">DISHUB</span>
-										<span class="d-block font-weight-bold text-warning" style="font-size: 0.76rem; letter-spacing: 0.3px;">KAB. PROBOLINGGO</span>
-									</div>
+									<img src="{{ $settings['logo_frontend'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/logo_frontend.png' }}" class="img_footer shrink-0" alt="DISHUB" style="max-height: 70px; width: auto;">
 								</a>
 							</div>
-							<p class="text-white-50 mb-0" style="font-size: 0.88rem; line-height: 1.7; max-width: 440px;">
-								Website Resmi Dinas Perhubungan Kabupaten Probolinggo. Media informasi publik terpadu untuk pelayanan transportasi, pengujian kendaraan bermotor (Uji KIR), keselamatan jalan, serta manajemen lalu lintas.
+							<p class="text-white mb-0" style="font-size: 0.8rem; line-height: 1.8; color: #d1d5db !important;">
+								Website Resmi {{ $settings['agency_name'] ?? 'Dinas Perhubungan' }} {{ $settings['regency_name'] ?? 'Kabupaten Probolinggo' }}. Merupakan media informasi elektronik satu pintu meliputi pelayanan publik, dokumen transparansi kinerja, dan informasi umum bagi masyarakat.
 							</p>
 						</div>
 						 
-						<!-- Middle Col: SKM Survey QR Code -->
-						@if(($settings['show_survey'] ?? '1') == '1')
-						<div class="col-12 col-sm-6 col-md-3 col-xl-3 mb-4 mb-md-0">
-							<div>
-								<h3 class="ftHeading text-white mb-3 font-weight-bold" style="font-size: 1.05rem; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">Survei Kepuasan (SKM)</h3>
-								<a href="https://esukma.jatimprov.go.id" target="_blank" class="d-inline-block p-3 bg-white rounded-xl shadow-sm text-decoration-none border transition-all" style="border: 2px solid #f59e0b !important; max-width: 170px; border-radius: 14px;" title="Isi Survei Kepuasan Masyarakat">
-									<img src="{{ $settings['qr_code_survey'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png' }}" class="img-fluid d-block mx-auto rounded" alt="Survei Kepuasan SKM" style="max-width: 125px; height: auto;">
-									<span class="d-block text-center font-weight-bold mt-2 py-1 bg-warning text-dark rounded-pill" style="font-size: 0.72rem;">
-										<i class="fas fa-edit mr-1"></i> Isi Survei SKM Jatim
-									</span>
-								</a>
+						<!-- Middle Col 1: SKM Survey QR Code -->
+						<div class="col-6 col-md-2 mb-4 mb-md-0">
+							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">Links Survey</h3>
+							<div class="bg-white p-2 d-inline-block rounded" style="width: 100px; height: 100px;">
+								<img src="{{ $settings['qr_code_survey'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png' }}" class="img-fluid w-100 h-100" alt="QR Survey" style="object-fit: cover;">
 							</div>
 						</div>
-						<div class="col-12 col-sm-6 col-md-4 col-xl-4">
-						@else
-						<div class="col-12 col-sm-6 col-md-7 col-xl-7">
-						@endif
 
-							<!-- Right Col: Alamat Kantor & Kontak Item Cards -->
-							<div>
-								<h3 class="ftHeading text-white mb-3 font-weight-bold" style="font-size: 1.05rem; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">Alamat & Kontak Kantor</h3>								 
-								
-								<!-- Alamat Utama -->
-								<div class="d-flex align-items-start mb-3">
-									<div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center mr-3 flex-shrink-0 shadow-sm" style="width: 38px; height: 38px; font-size: 0.95rem; margin-top: 2px;">
-										<i class="fas fa-map-marker-alt"></i>
-									</div>
-									<div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">
-										<strong class="d-block text-white font-weight-bold mb-0.5" style="font-size: 0.9rem;">Alamat Kantor Utama:</strong>
-										<span>{{ $settings['address'] ?? 'Jl. Suroyo No. 12, Kraksaan / Dringu - Probolinggo, Jawa Timur 67271' }}</span>
-									</div>
-								</div>
+						<!-- Middle Col 2: HALO SAE QR Code -->
+						<div class="col-6 col-md-2 mb-4 mb-md-0">
+							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">HALO SAE</h3>
+							<div class="bg-white p-2 d-inline-block rounded" style="width: 100px; height: 100px;">
+								<img src="{{ asset('backend/gambar/qr_code_kominfo.png') }}" onerror="this.src='https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png'" class="img-fluid w-100 h-100" alt="QR Halo Sae" style="object-fit: cover;">
+							</div>
+						</div>
 
-								<!-- Telepon Kantor -->
-								<div class="d-flex align-items-center mb-3">
-									<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mr-3 flex-shrink-0 shadow-sm" style="width: 38px; height: 38px; font-size: 0.9rem;">
-										<i class="fas fa-phone-alt"></i>
-									</div>
-									<div style="font-size: 0.88rem;">
-										<span class="d-block text-white-50" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Telepon Kantor</span>
-										<span class="text-white font-weight-bold" style="font-size: 0.9rem;">{{ $settings['phone'] ?? '(0335) 421554' }}</span>
-									</div>
-								</div>
+						<!-- Right Col: Alamat Kantor & Kontak -->
+						<div class="col-12 col-md-3">
+							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">Alamat Kantor</h3>
+							
+							<div class="mb-3" style="font-size: 0.8rem; color: #d1d5db; line-height: 1.6;">
+								{{ $settings['address'] ?? 'Jl. Panglima Sudirman No. 134 lt. 3 - Kraksaan' }}
+							</div>
 
-								<!-- Email Resmi -->
-								<div class="d-flex align-items-center">
-									<div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mr-3 flex-shrink-0 shadow-sm" style="width: 38px; height: 38px; font-size: 0.9rem;">
-										<i class="fas fa-envelope"></i>
-									</div>
-									<div style="font-size: 0.88rem;">
-										<span class="d-block text-white-50" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Email Resmi Kantor</span>
-										<a href="mailto:{{ $settings['email'] ?? 'dishub@probolinggokab.go.id' }}" class="text-white font-weight-bold text-decoration-none hover-warning" style="font-size: 0.88rem;">{{ $settings['email'] ?? 'dishub@probolinggokab.go.id' }}</a>
-									</div>
-								</div>
+							<div class="d-flex align-items-center mb-2" style="font-size: 0.8rem; color: #d1d5db;">
+								<i class="fas fa-phone-alt text-primary mr-2" style="width: 16px;"></i>
+								<span>{{ $settings['phone'] ?? '082222222222' }}</span>
+							</div>
 
+							<div class="d-flex align-items-center mb-4" style="font-size: 0.8rem; color: #d1d5db;">
+								<i class="fas fa-envelope text-primary mr-2" style="width: 16px;"></i>
+								<a href="mailto:{{ $settings['email'] ?? 'bagpemerintahan@probolinggokab.go.id' }}" class="text-decoration-none" style="color: #d1d5db;">{{ $settings['email'] ?? 'bagpemerintahan@probolinggokab.go.id' }}</a>
+							</div>
+
+							<div class="d-flex gap-2">
+								<a href="{{ $settings['instagram_url'] ?? '#' }}" target="_blank" class="d-flex align-items-center justify-content-center rounded text-white text-decoration-none" style="width: 35px; height: 35px; background-color: rgba(255,255,255,0.1); margin-right: 8px;">
+									<i class="fab fa-instagram"></i>
+								</a>
+								<a href="{{ $settings['facebook_url'] ?? '#' }}" target="_blank" class="d-flex align-items-center justify-content-center rounded text-white text-decoration-none" style="width: 35px; height: 35px; background-color: rgba(255,255,255,0.1); margin-right: 8px;">
+									<i class="fab fa-facebook-f"></i>
+								</a>
+								<a href="{{ $settings['youtube_url'] ?? '#' }}" target="_blank" class="d-flex align-items-center justify-content-center rounded text-white text-decoration-none" style="width: 35px; height: 35px; background-color: rgba(255,255,255,0.1);">
+									<i class="fab fa-youtube"></i>
+								</a>
 							</div>
 						</div>
 
@@ -683,21 +666,25 @@
 				</div>
 			</aside>
 
-			<!-- Social Media Links -->
-			<div class="text-center text-white py-3" style="background: #0f2b5c; border-top: 1px solid rgba(255,255,255,0.1);">
-				<div class="container d-flex justify-content-center gap-3 align-items-center">
-					<span class="mr-3 font-weight-bold" style="font-size: 0.9rem;">Ikuti Kami:</span>
-					<a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/dishubkabprobolinggo/' }}" target="_blank" class="text-white mx-2 hover-warning" title="Instagram" style="font-size: 1.3rem; transition: 0.3s;"><i class="fab fa-instagram"></i></a>
-					<a href="{{ $settings['tiktok_url'] ?? 'https://www.tiktok.com/@dishubkabprobolinggo' }}" target="_blank" class="text-white mx-2 hover-warning" title="TikTok" style="font-size: 1.3rem; transition: 0.3s;"><i class="fab fa-tiktok"></i></a>
-				</div>
-			</div>
-
 			<!-- Bottom Copyright Bar -->
-			<footer id="pageFooter" class="text-center text-white py-3" style="background: #040812; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82rem;">
-				<div class="container">
-					<p class="mb-0 text-white-50">
-						<span class="text-white font-weight-bold">{{ $settings['agency_name'] ?? 'DISHUB' }} - {{ $settings['regency_name'] ?? 'Kabupaten Probolinggo' }}</span> &copy; 2026. {{ $settings['copyright_text'] ?? 'All Rights Reserved.' }}
-					</p>
+			<footer id="pageFooter" class="text-white py-3" style="background-color: #1e3a5f; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem;">
+				<div class="container-fluid px-md-5">
+					<div class="row align-items-center">
+						<div class="col-2 col-md-1 text-center text-md-left">
+							<i class="fas fa-wheelchair text-white" style="font-size: 1.2rem;"></i>
+						</div>
+						<div class="col-8 col-md-7 text-center text-md-left" style="color: #9ca3af;">
+							<span class="text-uppercase">{{ $settings['agency_name'] ?? 'DISHUB' }} {{ $settings['regency_name'] ?? 'KABUPATEN PROBOLINGGO' }}</span> &copy; 2026. {{ $settings['copyright_text'] ?? 'All Rights Reserved' }}
+						</div>
+						<div class="col-12 col-md-3 text-center text-md-right mt-3 mt-md-0" style="color: #9ca3af;">
+							Powered by Laravel
+						</div>
+						<div class="col-2 col-md-1 text-right">
+							<a id="back-to-top" href="#" class="d-inline-flex align-items-center justify-content-center bg-white text-dark text-decoration-none" style="width: 40px; height: 40px; position: absolute; right: 20px; bottom: 15px; border-radius: 2px;" title="Kembali ke atas">
+								<i class="fas fa-chevron-up"></i>
+							</a>
+						</div>
+					</div>
 				</div>
 			</footer>
 		</div>
