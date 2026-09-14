@@ -630,7 +630,7 @@
 						<!-- Middle Col 2: HALO SAE QR Code -->
 						<div class="col-6 col-md-2 mb-4 mb-md-0">
 							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">HALO SAE</h3>
-							<a href="#" target="_blank" class="bg-white p-2 d-inline-block rounded text-decoration-none transition-all hover-shadow" style="width: 100px; height: 100px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk menuju halaman Halo SAE">
+							<a href="https://halosae.probolinggokab.go.id" target="_blank" class="bg-white p-2 d-inline-block rounded text-decoration-none transition-all hover-shadow" style="width: 100px; height: 100px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk menuju halaman Halo SAE">
 								<img src="{{ asset('backend/gambar/qr_code_kominfo.png') }}" onerror="this.src='https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png'" class="img-fluid w-100 h-100" alt="QR Halo Sae" style="object-fit: cover;">
 							</a>
 						</div>
