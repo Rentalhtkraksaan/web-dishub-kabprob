@@ -608,6 +608,10 @@
 							<div class="ftLogo mb-4">
 								<a href="{{ route('home') }}" class="d-inline-flex align-items-center text-decoration-none">
 									<img src="{{ $settings['logo_frontend'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/logo_frontend.png' }}" class="img_footer shrink-0" alt="DISHUB" style="max-height: 70px; width: auto;">
+									<div class="ml-3 pl-3 text-left" style="border-left: 2px solid rgba(255, 255, 255, 0.2);">
+										<span class="d-block font-weight-bold text-white" style="font-size: 1.1rem; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif;">DISHUB</span>
+										<span class="d-block text-warning font-weight-bold" style="font-size: 0.8rem; letter-spacing: 0.5px;">KAB. PROBOLINGGO</span>
+									</div>
 								</a>
 							</div>
 							<p class="text-white mb-0" style="font-size: 0.8rem; line-height: 1.8; color: #d1d5db !important;">
@@ -618,17 +622,17 @@
 						<!-- Middle Col 1: SKM Survey QR Code -->
 						<div class="col-6 col-md-2 mb-4 mb-md-0">
 							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">Links Survey</h3>
-							<div class="bg-white p-2 d-inline-block rounded" style="width: 100px; height: 100px;">
+							<a href="https://esukma.jatimprov.go.id" target="_blank" class="bg-white p-2 d-inline-block rounded text-decoration-none transition-all hover-shadow" style="width: 100px; height: 100px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk menuju halaman Survei">
 								<img src="{{ $settings['qr_code_survey'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png' }}" class="img-fluid w-100 h-100" alt="QR Survey" style="object-fit: cover;">
-							</div>
+							</a>
 						</div>
 
 						<!-- Middle Col 2: HALO SAE QR Code -->
 						<div class="col-6 col-md-2 mb-4 mb-md-0">
 							<h3 class="text-white mb-3 font-weight-bold" style="font-size: 1rem;">HALO SAE</h3>
-							<div class="bg-white p-2 d-inline-block rounded" style="width: 100px; height: 100px;">
+							<a href="#" target="_blank" class="bg-white p-2 d-inline-block rounded text-decoration-none transition-all hover-shadow" style="width: 100px; height: 100px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk menuju halaman Halo SAE">
 								<img src="{{ asset('backend/gambar/qr_code_kominfo.png') }}" onerror="this.src='https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png'" class="img-fluid w-100 h-100" alt="QR Halo Sae" style="object-fit: cover;">
-							</div>
+							</a>
 						</div>
 
 						<!-- Right Col: Alamat Kantor & Kontak -->
