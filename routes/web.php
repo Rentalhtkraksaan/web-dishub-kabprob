@@ -29,7 +29,8 @@ Route::get('/dokumen/download/{id}', [PublicController::class, 'downloadDocument
 Route::get('/dokumen/download-zip/{id}', [PublicController::class, 'downloadZip'])->name('dokumen.download_zip');
 Route::get('/kontak', [PublicController::class, 'kontak'])->name('kontak');
 Route::post('/kontak', [PublicController::class, 'contactStore'])->name('kontak.store');
-Route::get('/survei', [PublicController::class, 'survei'])->name('survei');
+Route::redirect('/survei', 'https://esukma.jatimprov.go.id')->name('survei');
+// Route::get('/survei', [PublicController::class, 'survei'])->name('survei'); // Hidden per request
 Route::post('/survei', [PublicController::class, 'surveiStore'])->name('survei.store');
 Route::get('/halaman/{slug}', [PublicController::class, 'page'])->name('page');
 Route::get('/csrf-token', function () {
@@ -79,6 +80,7 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
     // Dashboard & Profile (Accessible by All Roles: Anggota, Admin, Super Admin)
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/profile/update', [AdminController::class, 'profileUpdate'])->name('profile.update');
+    Route::get('/panduan', [AdminController::class, 'panduan'])->name('panduan');
     
     // 1. DOKUMEN (CRU: Lihat, Tambah, Edit untuk Anggota & Admin)
     Route::get('/documents', [AdminController::class, 'documents'])->name('documents');
@@ -97,6 +99,18 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
     
     Route::get('/survei-responses', [AdminController::class, 'surveiResponses'])->name('survei.responses');
     Route::put('/survei-responses/{id}', [AdminController::class, 'surveiFeedbackUpdate'])->name('survei.feedback.update');
+
+    // 16. Album Galeri Foto Kegiatan (Accessible by Anggota/Staf as well)
+    Route::get('/gallery', [AdminController::class, 'gallery'])->name('gallery');
+    Route::post('/gallery', [AdminController::class, 'galleryStore'])->name('gallery.store');
+    Route::put('/gallery/{id}', [AdminController::class, 'galleryUpdate'])->name('gallery.update');
+    Route::delete('/gallery/{id}', [AdminController::class, 'galleryDestroy'])->name('gallery.destroy');
+
+    // 15. Video Kegiatan & Dokumentasi (Accessible by Anggota/Staf as well)
+    Route::get('/videos', [AdminController::class, 'videos'])->name('videos');
+    Route::post('/videos', [AdminController::class, 'videoStore'])->name('videos.store');
+    Route::put('/videos/{id}', [AdminController::class, 'videoUpdate'])->name('videos.update');
+    Route::delete('/videos/{id}', [AdminController::class, 'videoDestroy'])->name('videos.destroy');
 
     // RESTRICTED TO ADMIN & SUPER ADMIN (View, Create, Edit):
     Route::middleware(['role:admin,super_admin'])->group(function () {
@@ -131,10 +145,7 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
         Route::post('/org-chart/{id}/quick-move', [AdminController::class, 'orgChartQuickMove'])->name('org_chart.quick_move');
         Route::put('/org-chart/{id}', [AdminController::class, 'orgChartUpdate'])->name('org_chart.update');
 
-        // 8. Sidebar Widgets
-        Route::get('/widgets', [AdminController::class, 'widgets'])->name('widgets');
-        Route::post('/widgets', [AdminController::class, 'widgetStore'])->name('widgets.store');
-        Route::put('/widgets/{id}', [AdminController::class, 'widgetUpdate'])->name('widgets.update');
+
 
         // 9. Related Links
         Route::get('/links', [AdminController::class, 'links'])->name('links');
@@ -164,23 +175,21 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
         Route::post('/informasi-tabs', [AdminController::class, 'informasiTabStore'])->name('informasi_tabs.store');
         Route::put('/informasi-tabs/{id}', [AdminController::class, 'informasiTabUpdate'])->name('informasi_tabs.update');
 
-        // 15. Video Kegiatan & Dokumentasi
-        Route::get('/videos', [AdminController::class, 'videos'])->name('videos');
-        Route::post('/videos', [AdminController::class, 'videoStore'])->name('videos.store');
-        Route::put('/videos/{id}', [AdminController::class, 'videoUpdate'])->name('videos.update');
-
-        // 16. Album Galeri Foto Kegiatan
-        Route::get('/gallery', [AdminController::class, 'gallery'])->name('gallery');
-        Route::post('/gallery', [AdminController::class, 'galleryStore'])->name('gallery.store');
-        Route::put('/gallery/{id}', [AdminController::class, 'galleryUpdate'])->name('gallery.update');
 
     });
 
     // RESTRICTED TO SUPER ADMIN ONLY (Hak Akses Hapus Konten / Data):
     Route::middleware(['role:super_admin'])->group(function () {
+        // 8. Sidebar Widgets (Moved from admin)
+        Route::get('/widgets', [AdminController::class, 'widgets'])->name('widgets');
+        Route::post('/widgets', [AdminController::class, 'widgetStore'])->name('widgets.store');
+        Route::put('/widgets/{id}', [AdminController::class, 'widgetUpdate'])->name('widgets.update');
+
         // Analytics & System
         Route::post('/visitor-tracking/toggle', [AdminController::class, 'toggleVisitorTracking'])->name('visitor.tracking.toggle');
         Route::delete('/activity-logs/clear', [AdminController::class, 'clearActivityLogs'])->name('logs.clear');
+        Route::delete('/activity-logs/{id}', [AdminController::class, 'destroyActivityLog'])->name('logs.destroy');
+
         
         Route::delete('/documents/{id}', [AdminController::class, 'documentDestroy'])->name('documents.destroy');
         Route::delete('/services/{id}', [AdminController::class, 'serviceDestroy'])->name('services.destroy');
@@ -194,8 +203,6 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
         Route::delete('/messages/{id}', [AdminController::class, 'messageDestroy'])->name('messages.destroy');
         Route::delete('/users/{id}', [AdminController::class, 'userDestroy'])->name('users.destroy');
         Route::delete('/informasi-tabs/{id}', [AdminController::class, 'informasiTabDestroy'])->name('informasi_tabs.destroy');
-        Route::delete('/videos/{id}', [AdminController::class, 'videoDestroy'])->name('videos.destroy');
-        Route::delete('/gallery/{id}', [AdminController::class, 'galleryDestroy'])->name('gallery.destroy');
     });
 
 });

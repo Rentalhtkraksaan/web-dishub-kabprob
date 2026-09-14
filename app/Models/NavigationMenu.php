@@ -9,7 +9,7 @@ class NavigationMenu extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'url', 'parent_id', 'order', 'target', 'image_url', 'pdf_url', 'description', 'is_active'];
+    protected $fillable = ['title', 'url', 'parent_id', 'order', 'target', 'image_url', 'pdf_url', 'description', 'is_active', 'created_by'];
 
     public function children()
     {

@@ -88,12 +88,14 @@
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
                                 @if(auth()->user()->isSuperAdmin())
-                                    <form action="{{ route('admin.informasi_tabs.destroy', $tab->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus tab ini?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold rounded-xl transition-all border border-rose-200 inline-flex items-center gap-1">
-                                            <i class="fas fa-trash-alt"></i> Hapus
-                                        </button>
-                                    </form>
+                                    @if(!in_array($tab->filter_value, ['', 'Pemerintahan', 'Lalu Lintas', 'Pelayanan Publik', 'Pelayanan']) && $tab->filter_type !== 'all')
+                                        <form action="{{ route('admin.informasi_tabs.destroy', $tab->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus tab ini?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold rounded-xl transition-all border border-rose-200 inline-flex items-center gap-1">
+                                                <i class="fas fa-trash-alt"></i> Hapus
+                                            </button>
+                                        </form>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

@@ -34,27 +34,6 @@
                 
                 <article class="bg-white p-4 p-md-5 rounded shadow-sm mb-4" style="border: 1px solid #e2e8f0;">
                     
-                    <!-- DISPLAY HASIL SKM & TOMBOL ISI SURVEI -->
-                    @if($page->slug === 'survei-kepuasan-masyarakat' || request()->is('*survei-kepuasan-masyarakat*'))
-                        <div class="mb-5 p-4 rounded-3xl text-white shadow-lg" style="background: linear-gradient(135deg, #0f2b5c 0%, #1e40af 100%); border-radius: 24px;">
-                            <div class="row align-items-center">
-                                <div class="col-12 col-md-8 mb-3 mb-md-0">
-                                    <span class="badge badge-warning text-dark font-weight-extrabold text-xs px-3 py-1 mb-2" style="border-radius: 20px;">
-                                        <i class="fas fa-chart-line mr-1"></i> RESMI & TRANSPARAN
-                                    </span>
-                                    <h3 class="font-weight-black text-white mb-2" style="font-size: 1.5rem;">Hasil Indeks Kepuasan Masyarakat (IKM)</h3>
-                                    <p class="text-white-50 text-sm mb-0">
-                                        Survei ini mengukur 9 unsur pelayanan publik Dinas Perhubungan Kabupaten Probolinggo secara berkesinambungan.
-                                    </p>
-                                </div>
-                                <div class="col-12 col-md-4 text-md-right">
-                                    <a href="{{ route('survei') }}" class="btn btn-warning text-dark font-weight-extrabold px-4 py-3 shadow-lg hover-scale" style="border-radius: 14px; font-size: 0.95rem; outline: none; box-shadow: none !important;">
-                                        <i class="fas fa-edit mr-2"></i> Isi Survei SKM Sekarang
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
                     
                     <!-- BAGAN STRUKTUR ORGANISASI INTERAKTIF & GARIS KOMANDO -->
                     @if(isset($orgChartRoots) && count($orgChartRoots) > 0 && ($page->slug === 'struktur-organisasi' || request()->is('*struktur-organisasi*')))
@@ -68,19 +47,29 @@
                                         Bagan Struktur Organisasi & Garis Komando
                                     </h3>
                                 </div>
-                                <div class="mt-3 mt-md-0 d-flex gap-2 align-items-center">
-                                    <span class="badge badge-success px-2 py-1"><i class="fas fa-arrow-down mr-1"></i> Garis Komando</span>
-                                    <span class="badge badge-warning text-dark px-2 py-1 ml-2"><i class="fas fa-arrows-alt-h mr-1"></i> Garis Koordinasi</span>
+                                <div class="mt-3 mt-md-0 d-flex gap-2 align-items-center flex-wrap">
+                                    <div class="btn-group shadow-sm mr-2" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary bg-white" id="zoomInBtn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary bg-white" id="zoomOutBtn" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary bg-white" id="resetZoomBtn" title="Reset Posisi"><i class="fas fa-compress-arrows-alt"></i></button>
+                                    </div>
+                                    <span class="badge badge-success px-2 py-1"><i class="fas fa-arrow-down mr-1"></i> Komando</span>
+                                    <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-arrows-alt-h mr-1"></i> Koordinasi</span>
                                 </div>
                             </div>
 
                             <!-- Interactive Org Chart Tree Container -->
-                            <div class="org-tree-wrapper overflow-auto py-3">
-                                <ul class="org-tree-root list-unstyled text-center mb-0">
-                                    @foreach($orgChartRoots as $root)
-                                        @include('public.partials.org_node', ['node' => $root])
-                                    @endforeach
-                                </ul>
+                            <div class="text-center mb-2">
+                                <small class="text-muted"><i class="fas fa-info-circle text-primary"></i> <b>Tips:</b> Anda bisa menggeser layar (scroll/drag) atau menggunakan tombol Zoom di atas untuk melihat bagan yang terpotong.</small>
+                            </div>
+                            <div class="org-tree-wrapper overflow-auto py-3" style="cursor: grab; min-height: 500px;" id="orgTreeWrapper">
+                                <div id="orgTreeRoot" style="width: max-content; min-width: 100%; display: flex; justify-content: center; padding: 20px;">
+                                    <ul class="org-tree-root list-unstyled text-center mb-0">
+                                        @foreach($orgChartRoots as $root)
+                                            @include('public.partials.org_node', ['node' => $root])
+                                        @endforeach
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     @endif
@@ -546,5 +535,36 @@
         background: #cbd5e1;
         border-radius: 4px;
     }
+    .org-tree-wrapper:active {
+        cursor: grabbing !important;
+    }
 </style>
 @endsection
+
+@section('scripts')
+<script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const elem = document.getElementById('orgTreeRoot');
+        const wrapper = document.getElementById('orgTreeWrapper');
+        
+        if (elem && wrapper) {
+            const panzoom = Panzoom(elem, {
+                maxScale: 2,
+                minScale: 0.3,
+                step: 0.1,
+                canvas: true
+            });
+            
+            // Enable zooming with mouse wheel
+            wrapper.addEventListener('wheel', panzoom.zoomWithWheel);
+
+            // Controls
+            document.getElementById('zoomInBtn').addEventListener('click', panzoom.zoomIn);
+            document.getElementById('zoomOutBtn').addEventListener('click', panzoom.zoomOut);
+            document.getElementById('resetZoomBtn').addEventListener('click', () => {
+                panzoom.reset();
+            });
+        }
+    });
+</script>

@@ -88,7 +88,7 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Upload Foto Pejabat</label>
-                        <input type="file" name="image_file" accept="image/*"
+                        <input type="file" name="image_file" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)"
                                class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 cursor-pointer bg-slate-800/50 rounded-xl border border-slate-700/80">
                     </div>
 
@@ -248,8 +248,7 @@
          x-cloak 
          class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         
-        <div @click.away="editModalOpen = false" 
-             class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4">
             
             <div class="p-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -304,7 +303,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Ganti Foto Pejabat (Upload File)</label>
-                    <input type="file" name="image_file" accept="image/*" 
+                    <input type="file" name="image_file" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)"
                            class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 cursor-pointer bg-slate-800/50 rounded-xl border border-slate-700/80">
                     <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika tidak ingin mengganti file foto.</p>
                 </div>

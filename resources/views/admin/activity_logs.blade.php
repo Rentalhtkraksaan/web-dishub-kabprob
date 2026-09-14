@@ -156,11 +156,7 @@
                     Menampilkan {{ $logs->firstItem() ?? 0 }} - {{ $logs->lastItem() ?? 0 }} dari {{ $logs->total() }} data
                 </span>
             </div>
-            @if(auth()->user()->isSuperAdmin())
-                <button @click="clearLogsOpen = true" class="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2">
-                    <i class="fas fa-trash-alt"></i> Bersihkan Seluruh Log
-                </button>
-            @endif
+
         </div>
 
         <div class="overflow-x-auto">
@@ -174,6 +170,9 @@
                         <th class="py-3.5 px-4 text-center">Event Aksi</th>
                         <th class="py-3.5 px-4">Detail Aktivitas</th>
                         <th class="py-3.5 px-4 text-right">IP Address</th>
+                        @if(auth()->user()->username === 'aditya' || auth()->user()->email === 'aditya.developer@dishub.probolinggokab.go.id')
+                        <th class="py-3.5 px-4 text-center">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -268,10 +267,23 @@
                                     {{ $log->ip_address ?? '127.0.0.1' }}
                                 </span>
                             </td>
+
+                            <!-- Action Delete (Developer Only) -->
+                            @if(auth()->user()->username === 'aditya' || auth()->user()->email === 'aditya.developer@dishub.probolinggokab.go.id')
+                            <td class="py-3.5 px-4 text-center">
+                                <form action="{{ route('admin.logs.destroy', $log->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus log ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center border border-rose-100 mx-auto" title="Hapus Log">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="{{ (auth()->user()->username === 'aditya' || auth()->user()->email === 'aditya.developer@dishub.probolinggokab.go.id') ? 8 : 7 }}" class="py-12 text-center text-slate-400">
                                 <i class="fas fa-file-circle-xmark text-4xl mb-3 block text-slate-300"></i>
                                 <p class="font-bold text-sm text-slate-600">Belum ada catatan aktivitas log.</p>
                                 <p class="text-xs text-slate-400 mt-1">Gunakan filter atau kata kunci lain untuk mencari data log.</p>

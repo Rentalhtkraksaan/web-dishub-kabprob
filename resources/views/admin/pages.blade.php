@@ -43,6 +43,37 @@
         }
 
         this.showModal = true;
+        
+        if (!this.isVisiMisiMode && !this.isTugasFungsiMode) {
+            this.initSummernote(this.currentPage.content || '');
+        }
+    },
+    initSummernote(content) {
+        setTimeout(() => {
+            if ($('#pageContent').hasClass('summernote-initialized')) {
+                $('#pageContent').summernote('code', content);
+            } else {
+                $('#pageContent').summernote({
+                    height: 300,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    callbacks: {
+                        onChange: (contents, $editable) => {
+                            this.currentPage.content = contents;
+                        }
+                    }
+                });
+                $('#pageContent').addClass('summernote-initialized');
+                $('#pageContent').summernote('code', content);
+            }
+        }, 100);
     },
     parseContentToVisiMisi(content) {
         let clean = content.replace(/<[^>]*>?/gm, '');
@@ -240,15 +271,15 @@
     @if($visiMisiPage)
         <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent rounded-2xl p-5 border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-bold shrink-0 border border-amber-500/40">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center text-xl font-bold shrink-0 border border-amber-500/40">
                     <i class="fas fa-bullseye"></i>
                 </div>
                 <div>
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-extrabold text-[10px] uppercase">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-700 border border-amber-200 font-extrabold text-[10px] uppercase">
                         <i class="fas fa-star text-[9px]"></i> Kelola Visi & Misi Instansi (Bisa Tambah Baris Visi & Misi)
                     </div>
-                    <h3 class="text-sm font-extrabold text-white mt-1">Visi & Misi Perhubungan</h3>
-                    <p class="text-xs text-slate-400">Tambah Baris Visi dan Tambah Baris Misi secara dinamis tanpa perlu mengetik kode HTML.</p>
+                    <h3 class="text-sm font-extrabold text-amber-900 mt-1">Visi & Misi Perhubungan</h3>
+                    <p class="text-xs text-amber-800">Tambah Baris Visi dan Tambah Baris Misi secara dinamis tanpa perlu mengetik kode HTML.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -266,15 +297,15 @@
     @if($tugasFungsiPage)
         <div class="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent rounded-2xl p-5 border border-emerald-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-bold shrink-0 border border-emerald-500/40">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-xl font-bold shrink-0 border border-emerald-500/40">
                     <i class="fas fa-tasks"></i>
                 </div>
                 <div>
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] uppercase">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold text-[10px] uppercase">
                         <i class="fas fa-check-circle text-[9px]"></i> Kelola Tugas & Fungsi Instansi (Lengkap Foto & PDF)
                     </div>
-                    <h3 class="text-sm font-extrabold text-white mt-1">Tugas dan Fungsi DISHUB</h3>
-                    <p class="text-xs text-slate-400">Sunting Tugas Utama, Tambah Baris Poin Fungsi, Upload Foto Banner 16:9 & Dokumen PDF Lampiran.</p>
+                    <h3 class="text-sm font-extrabold text-emerald-900 mt-1">Tugas dan Fungsi DISHUB</h3>
+                    <p class="text-xs text-emerald-800">Sunting Tugas Utama, Tambah Baris Poin Fungsi, Upload Foto Banner 16:9 & Dokumen PDF Lampiran.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -415,7 +446,7 @@
 
     <!-- ===== MODAL FORM (ADD / EDIT PAGE WITH DYNAMIC VISI MISI & TUGAS FUNGSI ROWS) ===== -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div @click.away="showModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
             
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-3">
@@ -469,7 +500,8 @@
                         <div>
                             <input type="file" 
                                    name="image_file" 
-                                   accept="image/*" 
+                                   accept="image/jpeg, image/png, image/jpg, image/webp" 
+                                   @change="window.validateGlobalFile($event, 'image', 5)"
                                    class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                             <p class="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, WEBP (Max 3MB). Rekomendasi: 1280x720 / 1920x1080</p>
                         </div>
@@ -506,6 +538,7 @@
                             <input type="file" 
                                    name="pdf_file" 
                                    accept="application/pdf" 
+                                   @change="window.validateGlobalFile($event, 'pdf', 20)"
                                    class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white hover:file:bg-rose-700 cursor-pointer">
                             <p class="text-[10px] text-slate-400 mt-1">Format PDF (Max 10MB)</p>
                         </div>
@@ -658,11 +691,13 @@
                             <span>Isi Konten Teks / Caption Halaman</span>
                             <span class="text-[10px] text-emerald-600 font-bold"><i class="fas fa-check-circle"></i> Mudah: Cukup Ketik Teks Biasa</span>
                         </label>
-                        <textarea name="content" 
-                                  rows="6" 
-                                  x-model="currentPage.content" 
-                                  placeholder="Tuliskan deskripsi lengkap, persyaratan layanan, atau uraian..." 
-                                  class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none leading-relaxed text-xs font-sans text-slate-900"></textarea>
+                        <div x-ignore>
+                            <textarea id="pageContent" name="content" 
+                                      rows="6" 
+                                      x-model="currentPage.content" 
+                                      placeholder="Tuliskan deskripsi lengkap, persyaratan layanan, atau uraian..." 
+                                      class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none leading-relaxed text-xs font-sans text-slate-900"></textarea>
+                        </div>
                     </div>
                 </template>
 
@@ -681,3 +716,17 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script>
+    // Bypass focus trap inside modal so Summernote dropdowns/modals can be clicked/typed in
+    document.addEventListener('focusin', function (e) {
+        if (e.target.closest('.note-editor, .note-modal, .note-popover')) {
+            e.stopImmediatePropagation();
+        }
+    }, true);
+</script>
+@endpush

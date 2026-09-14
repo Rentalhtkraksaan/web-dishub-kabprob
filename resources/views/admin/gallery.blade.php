@@ -8,6 +8,7 @@
     editMode: false, 
     currentAlbum: { title: '', description: '', cover_image: '', photos: [] },
     removedPhotos: [],
+    isSubmitDisabled: false,
     openModal(albumObj = null) {
         this.removedPhotos = [];
         if (albumObj) {
@@ -25,6 +26,7 @@
                 photos: [] 
             };
         }
+        this.isSubmitDisabled = false;
         this.showModal = true;
     },
     toggleRemovePhoto(photoUrl) {
@@ -193,11 +195,11 @@
                                    class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-[11px] inline-flex items-center gap-1" title="Lihat Halaman Album Publik">
                                     <i class="fas fa-external-link-alt text-xs"></i>
                                 </a>
-                                <button @click="openModal({{ json_encode($album) }})" 
-                                        class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Album & Kelola Foto">
-                                    <i class="fas fa-edit text-xs"></i> Edit & Kelola Foto
-                                </button>
-                                @if(auth()->user()->isSuperAdmin())
+                                @if(auth()->user()->isSuperAdmin() || $album->created_by == auth()->id())
+                                    <button @click="openModal({{ json_encode($album) }})" 
+                                            class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Album & Kelola Foto">
+                                        <i class="fas fa-edit text-xs"></i> Edit & Kelola Foto
+                                    </button>
                                     <form action="{{ route('admin.gallery.destroy', $album->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus album kegiatan {{ $album->title }} beserta seluruh foto di dalamnya?')">
                                         @csrf
                                         @method('DELETE')
@@ -230,7 +232,7 @@
 
     <!-- ===== MODAL FORM (ADD / EDIT ALBUM & MANAGE MULTIPLE PHOTOS) ===== -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div @click.away="showModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
             
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-3">
@@ -295,7 +297,8 @@
                         <div>
                             <input type="file" 
                                    name="cover_file" 
-                                   accept="image/*" 
+                                   accept=".jpg,.jpeg,.png,.webp" 
+                                   @change="const file = $event.target.files[0]; if(file) { const ext = file.name.split('.').pop().toLowerCase(); if(!['jpg','jpeg','png','webp'].includes(ext)) { Swal.fire({icon: 'error', title: 'Format Tidak Valid', text: 'Wajib mengunggah foto dengan ekstensi JPG, JPEG, PNG, atau WEBP!'}); $event.target.value = ''; isSubmitDisabled = true; } else { isSubmitDisabled = false; } } else { isSubmitDisabled = false; }"
                                    class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer">
                             <p class="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, WEBP (Max 5MB)</p>
                         </div>
@@ -322,7 +325,8 @@
                         <input type="file" 
                                name="photo_files[]" 
                                multiple 
-                               accept="image/*" 
+                               accept=".jpg,.jpeg,.png,.webp" 
+                               @change="const files = $event.target.files; let valid = true; for(let i=0; i<files.length; i++) { const ext = files[i].name.split('.').pop().toLowerCase(); if(!['jpg','jpeg','png','webp'].includes(ext)) { valid = false; break; } } if(!valid) { Swal.fire({icon: 'error', title: 'Format Tidak Valid', text: 'Semua foto wajib memiliki ekstensi JPG, JPEG, PNG, atau WEBP!'}); $event.target.value = ''; isSubmitDisabled = true; } else { isSubmitDisabled = false; }"
                                class="w-full text-[11px] text-slate-500 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
                         <p class="text-[10px] text-slate-500 mt-1.5">
                             💡 <strong>Tips:</strong> Tekan tombol <kbd class="px-1.5 py-0.5 bg-slate-200 rounded">Ctrl</kbd> atau <kbd class="px-1.5 py-0.5 bg-slate-200 rounded">Shift</kbd> di keyboard Anda saat memilih foto dari laptop/komputer untuk memilih banyak foto sekaligus!
@@ -368,13 +372,10 @@
                     </div>
                 </template>
 
-                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
-                    <button type="button" @click="showModal = false" class="px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-amber-500/30 flex items-center gap-2">
-                        <i class="fas fa-save"></i>
-                        <span>Simpan Album Kegiatan</span>
+                <div class="pt-3 flex justify-end gap-3 border-t border-slate-100 mt-6 relative z-10">
+                    <button type="button" @click="showModal = false; isSubmitDisabled = false" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-sm">Batal</button>
+                    <button type="submit" :disabled="isSubmitDisabled" :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center gap-2 hover:shadow-amber-500/30">
+                        <i class="fas fa-save"></i> Simpan Album Kegiatan
                     </button>
                 </div>
             </form>

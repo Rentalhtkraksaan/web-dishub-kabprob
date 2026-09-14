@@ -52,7 +52,7 @@
                     <label class="block font-extrabold text-slate-800">1. Logo Topbar Frontend (Utama)</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Upload Berkas Foto:</span>
-                        <input type="file" name="file_logo_frontend" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
+                        <input type="file" name="file_logo_frontend" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
                     </div>
                     <div class="pt-1.5 border-t border-slate-200">
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Atau Link URL Logo:</span>
@@ -64,7 +64,7 @@
                     <label class="block font-extrabold text-slate-800">2. Favicon Tab Browser (Persegi 1:1)</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Upload Berkas Foto 1:1:</span>
-                        <input type="file" name="file_favicon" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer">
+                        <input type="file" name="file_favicon" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 2)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer">
                     </div>
                     <div class="pt-1.5 border-t border-slate-200">
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Atau Link URL Favicon:</span>
@@ -76,7 +76,7 @@
                     <label class="block font-extrabold text-slate-800">3. Logo Footer / Backend Panel</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Upload Berkas Foto:</span>
-                        <input type="file" name="file_logo_backend" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
+                        <input type="file" name="file_logo_backend" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
                     </div>
                     <div class="pt-1.5 border-t border-slate-200">
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Atau Link URL Logo:</span>
@@ -90,7 +90,7 @@
                     <label class="block font-extrabold text-slate-800">3. Logo BerAKHLAK (Pojok Kanan Atas)</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Upload Berkas Foto:</span>
-                        <input type="file" name="file_logo_berakhlak" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
+                        <input type="file" name="file_logo_berakhlak" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
                     </div>
                     <div class="pt-1.5 border-t border-slate-200">
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Atau Link URL Logo:</span>
@@ -102,7 +102,7 @@
                     <label class="block font-extrabold text-slate-800">4. Gambar Kode QR Survei SKM</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Upload Berkas Foto QR:</span>
-                        <input type="file" name="file_qr_code_survey" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 cursor-pointer">
+                        <input type="file" name="file_qr_code_survey" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200 cursor-pointer">
                     </div>
                     <div class="pt-1.5 border-t border-slate-200">
                         <span class="block text-[10px] text-slate-500 font-bold mb-1">Atau Link URL Gambar QR:</span>
@@ -212,9 +212,13 @@
                     </div>
 
                     <div>
-                        <label class="block font-bold text-slate-800 mb-1">Tautan URL Profil Instagram (Otomatis)</label>
+                        <label class="block font-bold text-slate-800 mb-1">Tautan URL Profil Instagram</label>
                         <input type="text" name="instagram_url" value="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/dishubkabprobolinggo/' }}" placeholder="https://www.instagram.com/dishubkabprobolinggo/" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:outline-none text-xs font-semibold">
-                        <span class="text-[11px] text-slate-500 mt-1 block">Link penuh profil Instagram instansi yang dibuka saat pengunjung mengklik link.</span>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-800 mb-1">Tautan URL TikTok</label>
+                        <input type="text" name="tiktok_url" value="{{ $settings['tiktok_url'] ?? 'https://www.tiktok.com/@dishubkabprobolinggo' }}" placeholder="https://www.tiktok.com/@dishubkabprobolinggo" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:outline-none text-xs font-semibold">
                     </div>
                 </div>
             </div>

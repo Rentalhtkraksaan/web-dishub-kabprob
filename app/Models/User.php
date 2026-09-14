@@ -26,9 +26,15 @@ class User extends Authenticatable
         'password',
         'role',
         'is_hidden',
-        'avatar',
         'is_active',
+        'avatar',
+        'created_by',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function isSuperAdmin()
     {
@@ -38,6 +44,11 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->role === 'admin';
+    }
+
+    public function isDeveloper()
+    {
+        return $this->role === 'developer';
     }
 
     public function isAnggota()

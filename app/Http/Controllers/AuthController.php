@@ -57,8 +57,8 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'string'],
-            'password' => ['required', 'string'],
+            'email' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'string', 'max:50'],
             'captcha' => ['required', 'string'],
         ]);
 
@@ -143,9 +143,9 @@ class AuthController extends Controller
     public function forgotPasswordVerify(Request $request)
     {
         $request->validate([
-            'identity'      => 'required|string',
-            'whatsapp'      => 'required|string',
-            'referral_code' => 'required|string',
+            'identity'      => 'required|string|max:50',
+            'whatsapp'      => 'required|string|max:13',
+            'referral_code' => 'required|string|max:7',
         ], [
             'identity.required'      => 'Username / Email wajib diisi.',
             'whatsapp.required'      => 'No. WhatsApp (Validasi 1) wajib diisi.',

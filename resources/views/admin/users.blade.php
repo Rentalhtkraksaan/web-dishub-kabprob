@@ -239,12 +239,26 @@
 
                             <!-- Action Buttons -->
                             <td class="px-6 py-4 text-right space-x-1.5">
-                                <button @click="showModal = true; editMode = true; passwordInput = ''; showPassword = false; currentUser = {{ json_encode($user) }}" 
-                                        class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Akun & Role">
-                                    <i class="fas fa-edit text-xs"></i> Edit
-                                </button>
+                                @php
+                                    $canEdit = false;
+                                    $me = auth()->user();
+                                    if ($me->isSuperAdmin() || $me->isDeveloper()) {
+                                        $canEdit = true;
+                                    } elseif ($me->isAdmin()) {
+                                        if (!$user->isSuperAdmin() && !$user->isDeveloper() && ($user->id === $me->id || $user->created_by === $me->id)) {
+                                            $canEdit = true;
+                                        }
+                                    }
+                                @endphp
 
-                                @if(auth()->user()->isSuperAdmin() && auth()->id() !== $user->id)
+                                @if($canEdit)
+                                    <button @click="showModal = true; editMode = true; passwordInput = ''; showPassword = false; currentUser = {{ json_encode($user) }}" 
+                                            class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Akun & Role">
+                                        <i class="fas fa-edit text-xs"></i> Edit
+                                    </button>
+                                @endif
+
+                                @if($canEdit && auth()->id() !== $user->id)
                                     <form action="{{ route('admin.users.toggle', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan kembali' }} pengguna {{ $user->name }}?')">
                                         @csrf
                                         @method('PATCH')
@@ -296,8 +310,6 @@
                 @csrf
                 <input type="hidden" name="_method" :value="editMode ? 'PUT' : 'POST'">
                 
-                @if(auth()->user()->isSuperAdmin())
-                    <!-- Super Admin: Akses Lengkap (Edit Nama, Username, Role, Email, WA, Kode Referral) -->
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Pengguna <span class="text-rose-500">*</span></label>
                         <input type="text" name="name" required x-model="currentUser.name" placeholder="Contoh: Sukma / Staf LLAJ DISHUB" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold">
@@ -312,8 +324,13 @@
                             <label class="block font-bold text-slate-700 mb-1">Role Hak Akses <span class="text-rose-500">*</span></label>
                             <select name="role" x-model="currentUser.role" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-blue-700">
                                 <option value="anggota">👤 Anggota Staf</option>
-                                <option value="admin">👑 Admin</option>
-                                <option value="super_admin">⭐ Super Admin</option>
+                                @if(auth()->user()->isSuperAdmin() || auth()->user()->isDeveloper())
+                                    <option value="admin">👑 Admin</option>
+                                    <option value="super_admin">⭐ Super Admin</option>
+                                    @if(auth()->user()->isDeveloper())
+                                        <option value="developer">👨‍💻 Developer</option>
+                                    @endif
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -361,53 +378,6 @@
                             </p>
                         </div>
                     </div>
-                @else
-                    <!-- Admin Biasa: Nama, Username, Role, Email, WA, dan Kode Referral Dikunci (Hanya Password) -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800 flex items-center gap-2 font-medium">
-                        <i class="fas fa-lock text-amber-600 text-sm shrink-0"></i>
-                        <span>Mode Admin: Profil, Email, WA, Kode Referral & Role dikunci. Anda hanya berhak mengubah <strong>Password Keamanan</strong>.</span>
-                    </div>
-
-                    <div>
-                        <label class="block font-bold text-slate-500 mb-1">Nama Lengkap Pengguna <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span></label>
-                        <input type="text" x-model="currentUser.name" disabled class="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl text-slate-500 font-semibold cursor-not-allowed select-none">
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-slate-500 mb-1">Username Login <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span></label>
-                            <input type="text" x-model="currentUser.username" disabled class="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl text-slate-500 font-semibold cursor-not-allowed select-none">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-500 mb-1">Role Hak Akses <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span></label>
-                            <div class="px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl font-bold text-slate-600 flex items-center gap-1.5 cursor-not-allowed select-none">
-                                <span x-show="currentUser.role === 'super_admin'">⭐ Super Admin</span>
-                                <span x-show="currentUser.role === 'admin'">👑 Admin</span>
-                                <span x-show="currentUser.role === 'anggota'">👤 Anggota Staf</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block font-bold text-slate-500 mb-1">Email Resmi Administrator <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span></label>
-                        <input type="email" x-model="currentUser.email" disabled class="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl text-slate-500 font-medium cursor-not-allowed select-none">
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-slate-500 mb-1 flex items-center gap-1">
-                                <i class="fab fa-whatsapp text-slate-400"></i> No. WhatsApp <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span>
-                            </label>
-                            <input type="text" x-model="currentUser.whatsapp" disabled class="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl text-slate-500 font-semibold cursor-not-allowed select-none">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-500 mb-1 flex items-center gap-1">
-                                <i class="fas fa-key text-slate-400"></i> Kode Referral <span class="text-[10px] text-slate-400 font-normal">(Dikunci)</span>
-                            </label>
-                            <input type="text" x-model="currentUser.referral_code" disabled class="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100/80 rounded-xl text-slate-500 font-semibold uppercase cursor-not-allowed select-none">
-                        </div>
-                    </div>
-                @endif
 
                 <!-- Password Field with Eye Toggle & Strength Checklist -->
                 <div>

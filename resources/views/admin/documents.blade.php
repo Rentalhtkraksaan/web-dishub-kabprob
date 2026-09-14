@@ -3,7 +3,34 @@
 @section('page_title', 'Kelola Dokumen & Akuntabilitas Kinerja')
 
 @section('content')
-<div class="space-y-6" x-data="{ showModal: false, editMode: false, currentDoc: {} }">
+@php
+    // Ambil daftar kategori unik dari database yang pernah ditambahkan (termasuk CUSTOM)
+    $dbCategories = \App\Models\PublicDocument::select('type', 'category')
+        ->whereNotNull('category')
+        ->distinct()
+        ->get()
+        ->groupBy('type')
+        ->map(function($items) {
+            return $items->pluck('category')->toArray();
+        })->toArray();
+
+    // Default list dihapus sesuai permintaan agar kategori yang tidak terpakai bisa hilang.
+    $defaultCategories = [
+        'perencanaan-kinerja' => [],
+        'pengukuran-kinerja' => [],
+        'pelaporan-kinerja' => [],
+        'evaluasi-kinerja' => []
+    ];
+
+    // Gabungkan default dan database
+    $categoryMap = [];
+    foreach (['perencanaan-kinerja', 'pengukuran-kinerja', 'pelaporan-kinerja', 'evaluasi-kinerja'] as $type) {
+        $dbCats = isset($dbCategories[$type]) ? $dbCategories[$type] : [];
+        $defCats = isset($defaultCategories[$type]) ? $defaultCategories[$type] : [];
+        $categoryMap[$type] = array_values(array_unique(array_merge($defCats, $dbCats)));
+    }
+@endphp
+<div class="space-y-6" x-data="{ showModal: false, editMode: false, currentDoc: {}, categoryMap: {{ json_encode($categoryMap) }}, get filteredCategories() { return this.categoryMap[this.currentDoc.type] || []; }, isSubmitDisabled: false }">
     
     <!-- Header Banner & Action Button -->
     <div class="bg-gradient-to-r from-blue-900 to-emerald-900 rounded-3xl p-6 text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -152,11 +179,11 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right space-x-2">
-                                <button @click="showModal = true; editMode = true; currentDoc = {{ json_encode($doc) }}" 
-                                        class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white font-bold rounded-xl transition-all border border-blue-200 inline-flex items-center gap-1 shadow-xs" title="Edit Dokumen">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                @if(auth()->user()->isSuperAdmin())
+                                @if(auth()->user()->isSuperAdmin() || $doc->created_by == auth()->id())
+                                    <button @click="showModal = true; editMode = true; currentDoc = {{ json_encode($doc) }}" 
+                                            class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white font-bold rounded-xl transition-all border border-blue-200 inline-flex items-center gap-1 shadow-xs" title="Edit Dokumen">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
                                     <form action="{{ route('admin.documents.destroy', $doc->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -210,7 +237,7 @@
                         Kelompok / Menu Dokumen Publik <span class="text-rose-500">*</span>
                         <span class="text-[10px] text-blue-600 font-bold ml-1">(Pilih Lokasi Tampil di Website Publik)</span>
                     </label>
-                    <select name="type" required x-model="currentDoc.type" class="w-full px-3 py-2.5 bg-blue-50/50 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-800 text-xs">
+                    <select name="type" required x-model="currentDoc.type" @change="currentDoc.category = ''; isCustomCat = false;" class="w-full px-3 py-2.5 bg-blue-50/50 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-slate-800 text-xs">
                         <option value="perencanaan-kinerja">📂 Perencanaan Kinerja (/dokumen/perencanaan-kinerja)</option>
                         <option value="pengukuran-kinerja">📐 Pengukuran Kinerja (/dokumen/pengukuran-kinerja)</option>
                         <option value="pelaporan-kinerja">📊 Pelaporan Kinerja (/dokumen/pelaporan-kinerja)</option>
@@ -222,28 +249,10 @@
                     <div>
                         <label class="block font-extrabold text-slate-800 mb-1">Kategori Dokumen <span class="text-rose-500">*</span></label>
                         <select name="category" required x-model="currentDoc.category" @change="isCustomCat = ($event.target.value === 'CUSTOM')" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-medium text-xs">
-                            <optgroup label="Perencanaan Kinerja">
-                                <option value="Rencana Strategis">Rencana Strategis</option>
-                                <option value="Pohon Kinerja">Pohon Kinerja</option>
-                                <option value="Cascading">Cascading</option>
-                                <option value="Indikator Kinerja Utama">Indikator Kinerja Utama</option>
-                                <option value="Rencana Kerja">Rencana Kerja</option>
-                                <option value="Rencana Aksi">Rencana Aksi</option>
-                                <option value="Perjanjian Kinerja">Perjanjian Kinerja</option>
-                                <option value="Dokumen Perencanaan Anggaran">Dokumen Perencanaan Anggaran</option>
-                            </optgroup>
-                            <optgroup label="Pengukuran Kinerja">
-                                <option value="Capaian Kinerja">Capaian Kinerja</option>
-                                <option value="Indikator Pengukuran">Indikator Pengukuran</option>
-                            </optgroup>
-                            <optgroup label="Pelaporan Kinerja">
-                                <option value="LAKIP / LKjIP">LAKIP / LKjIP</option>
-                                <option value="Laporan Kinerja Tahunan">Laporan Kinerja Tahunan</option>
-                            </optgroup>
-                            <optgroup label="Evaluasi Kinerja">
-                                <option value="Lembar Hasil Evaluasi (LHE)">Lembar Hasil Evaluasi (LHE)</option>
-                                <option value="Evaluasi AKIP">Evaluasi AKIP</option>
-                            </optgroup>
+                            <option value="">-- Pilih Kategori --</option>
+                            <template x-for="cat in filteredCategories" :key="cat">
+                                <option :value="cat" x-text="cat"></option>
+                            </template>
                             <option value="CUSTOM">➕ Tambah Kategori Baru (Custom)...</option>
                         </select>
                         <input x-show="isCustomCat" type="text" name="custom_category" placeholder="Tuliskan nama kategori baru..." class="w-full mt-2 px-3 py-2 border border-blue-400 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-blue-900">
@@ -259,7 +268,7 @@
                     <label class="block font-extrabold text-slate-800">📄 Berkas PDF (Untuk Reader & Flipbook)</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 mb-1">Upload Komputer:</span>
-                        <input type="file" name="file_pdf" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+                        <input type="file" name="file_pdf" accept="application/pdf" @change="isSubmitDisabled = !window.validateGlobalFile($event, 'pdf', 20)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
                     </div>
                     <div>
                         <span class="block text-[10px] text-slate-500 mb-1">Atau Link URL PDF:</span>
@@ -271,7 +280,7 @@
                     <label class="block font-extrabold text-slate-800">📦 Berkas ZIP Archive (Khusus Format .zip)</label>
                     <div>
                         <span class="block text-[10px] text-slate-500 mb-1">Upload Komputer:</span>
-                        <input type="file" name="file_zip" accept=".zip" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
+                        <input type="file" name="file_zip" accept="application/zip, application/x-zip-compressed, multipart/x-zip" @change="isSubmitDisabled = !window.validateGlobalFile($event, 'zip', 50)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
                     </div>
                     <div>
                         <span class="block text-[10px] text-slate-500 mb-1">Atau Link URL ZIP:</span>
@@ -280,8 +289,8 @@
                 </div>
 
                 <div class="pt-3 flex justify-end gap-3 border-t border-slate-100">
-                    <button type="button" @click="showModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
-                    <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
+                    <button type="button" @click="showModal = false; isSubmitDisabled = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
+                    <button type="submit" :disabled="isSubmitDisabled" :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
                         <i class="fas fa-save"></i> Simpan Dokumen
                     </button>
                 </div>

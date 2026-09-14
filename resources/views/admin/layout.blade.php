@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('page_title', 'Control Panel') | DISHUB Portal</title>
-    <link rel="icon" type="image/png" href="{{ $settings['favicon'] ?? asset('images/logo_dishub.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ $settings['favicon'] ?? asset('images/logo_dishub.png') }}?v=2">
+    <link rel="icon" type="image/png" href="{{ $settings['favicon'] ?? asset('images/logo_dishub.png') }}?v=2">
+    <link rel="apple-touch-icon" href="{{ $settings['favicon'] ?? asset('images/logo_dishub.png') }}?v=2">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,6 +43,7 @@
     </style>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex" x-data="{ 
     sidebarOpen: false, 
@@ -113,6 +116,22 @@
                         <i class="fas fa-cogs text-sm text-teal-400"></i> Layanan Publik
                     </a>
 
+                    <a href="{{ route('admin.videos') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.videos') ? 'bg-rose-700 text-white shadow-md shadow-rose-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
+                        <i class="fab fa-youtube text-sm text-rose-400"></i> Video Dokumentasi
+                    </a>
+
+                    <a href="{{ route('admin.gallery') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.gallery') ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
+                        <i class="fas fa-images text-sm text-amber-400"></i> Album Galeri Foto
+                    </a>
+
+                    <a href="{{ route('admin.panduan') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.panduan') ? 'bg-indigo-700 text-white shadow-md shadow-indigo-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
+                        <i class="fas fa-book text-sm text-indigo-400"></i> Buku Panduan
+                    </a>
+
+                    <!-- HIDDEN PER REQUEST 
                     <a href="{{ route('admin.messages') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.messages') ? 'bg-red-700 text-white shadow-md shadow-red-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
                         <i class="fas fa-comments text-sm text-red-400"></i> Pesan & Pengaduan Warga
@@ -122,6 +141,7 @@
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.survei.responses') ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
                         <i class="fas fa-chart-line text-sm text-amber-400"></i> Hasil Survei SKM Publik
                     </a>
+                    -->
 
                 <!-- ===== KHUSUS ADMIN & SUPER ADMIN (LENGKAP & PROFESIONAL) ===== -->
                 @else
@@ -182,10 +202,12 @@
                                 <i class="fas fa-file-signature text-rose-400"></i> Halaman Profil & Layanan
                             </a>
 
+                            @if(auth()->user()->isDeveloper())
                             <a href="{{ route('admin.org_chart') }}" 
                                class="flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-xs {{ request()->routeIs('admin.org_chart') ? 'bg-blue-700 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white' }}">
                                 <i class="fas fa-sitemap text-indigo-400"></i> Bagan Struktur Organisasi
                             </a>
+                            @endif
 
                             <a href="{{ route('admin.menus') }}" 
                                class="flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-xs {{ request()->routeIs('admin.menus') ? 'bg-blue-700 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white' }}">
@@ -197,10 +219,12 @@
                                 <i class="fas fa-table-columns text-violet-400"></i> Tab Menu Informasi
                             </a>
 
+                            @if(auth()->user()->isSuperAdmin())
                             <a href="{{ route('admin.widgets') }}" 
                                class="flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-xs {{ request()->routeIs('admin.widgets') ? 'bg-blue-700 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white' }}">
                                 <i class="fas fa-th-large text-emerald-400"></i> Kotak Informasi Samping
                             </a>
+                            @endif
 
                             <a href="{{ route('admin.links') }}" 
                                class="flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-xs {{ request()->routeIs('admin.links') ? 'bg-blue-700 text-white font-bold' : 'hover:bg-slate-800 text-slate-400 hover:text-white' }}">
@@ -211,6 +235,8 @@
 
                     <div class="pt-4 text-[10px] text-slate-500 uppercase tracking-widest px-3 py-1 font-bold">Layanan & Pengaturan</div>
 
+                    <!-- Pesan & Pengaduan dan Hasil Survei disembunyikan sesuai permintaan -->
+                    <!-- 
                     <a href="{{ route('admin.messages') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.messages') ? 'bg-blue-700 text-white shadow-md shadow-blue-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
                         <i class="fas fa-comments text-sm text-red-400"></i> Pesan & Pengaduan Warga
@@ -219,7 +245,8 @@
                     <a href="{{ route('admin.survei.responses') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.survei.responses') ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
                         <i class="fas fa-chart-line text-sm text-amber-400"></i> Hasil Survei SKM Publik
-                    </a>
+                    </a> 
+                    -->
 
                     <a href="{{ route('admin.users') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.users') ? 'bg-blue-700 text-white shadow-md shadow-blue-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
@@ -234,6 +261,11 @@
                     <a href="{{ route('admin.settings') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.settings') ? 'bg-blue-700 text-white shadow-md shadow-blue-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
                         <i class="fas fa-cog text-sm text-slate-400"></i> Pengaturan Website
+                    </a>
+
+                    <a href="{{ route('admin.panduan') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.panduan') ? 'bg-indigo-700 text-white shadow-md shadow-indigo-900/40 font-bold' : 'hover:bg-slate-800 text-slate-300' }}">
+                        <i class="fas fa-book text-sm text-indigo-400"></i> Buku Panduan
                     </a>
                 @endif
 
@@ -265,9 +297,12 @@
                 <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100">
                     <i class="fas fa-bars text-lg"></i>
                 </button>
-                <div>
-                    <h2 class="font-extrabold text-slate-800 text-base sm:text-lg tracking-tight">@yield('page_title', 'Control Panel')</h2>
-                    <p class="text-[11px] text-slate-500 hidden sm:block">Control Panel DISHUB Kabupaten Probolinggo</p>
+                <div class="flex items-center gap-3">
+                    <img src="{{ $settings['logo_frontend'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/logo_frontend.png' }}" alt="Logo DISHUB" class="h-10 w-auto hidden sm:block drop-shadow-sm">
+                    <div>
+                        <h2 class="font-extrabold text-slate-800 text-base sm:text-lg tracking-tight">@yield('page_title', 'Control Panel')</h2>
+                        <p class="text-[11px] text-slate-500 hidden sm:block">Control Panel DISHUB Kabupaten Probolinggo</p>
+                    </div>
                 </div>
             </div>
             
@@ -450,6 +485,59 @@
                 .catch(function() {});
             }, 15 * 60 * 1000);
         })();
+    </script>
+    <!-- Global File Validation Script -->
+    <script>
+        window.validateGlobalFile = function(event, type, maxSizeMB = 5) {
+            const file = event.target.files[0];
+            if (!file) return true; // Valid if optional
+            
+            let allowedTypes = [];
+            let typeName = '';
+            
+            if (type === 'image') {
+                allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+                typeName = 'gambar (JPG, JPEG, PNG, WEBP)';
+            } else if (type === 'pdf') {
+                allowedTypes = ['application/pdf'];
+                typeName = 'dokumen PDF (.pdf)';
+            } else if (type === 'zip') {
+                allowedTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
+                typeName = 'berkas ZIP (.zip)';
+            } else if (type === 'document') {
+                allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+                typeName = 'dokumen (PDF, DOC/X, XLS/X, PPT/X)';
+            }
+            
+            if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format File Tidak Valid',
+                    text: `Hanya file ${typeName} yang diperbolehkan!`,
+                    background: '#fff',
+                    confirmButtonColor: '#e11d48',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+                event.target.value = '';
+                return false;
+            }
+            
+            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+            if (file.size > maxSizeBytes) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ukuran File Terlalu Besar',
+                    text: `Maksimal ukuran file adalah ${maxSizeMB}MB.`,
+                    background: '#fff',
+                    confirmButtonColor: '#e11d48',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+                event.target.value = '';
+                return false;
+            }
+            
+            return true;
+        }
     </script>
     @stack('scripts')
 </body>

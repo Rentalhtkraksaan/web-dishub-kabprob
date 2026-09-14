@@ -17,6 +17,7 @@
     imageMode: 'url',
     previewUrl: '',
     formAction: '',
+    isSubmitDisabled: false,
     init() {
         this.formAction = SLIDER_STORE_URL;
         this.$watch('imageMode', () => { this.previewUrl = ''; });
@@ -27,6 +28,7 @@
         this.imageMode = 'url';
         this.previewUrl = '';
         this.formAction = SLIDER_STORE_URL;
+        this.isSubmitDisabled = false;
         this.showModal = true;
     },
     openEdit(slider) {
@@ -35,12 +37,21 @@
         this.imageMode = (slider.image_url && slider.image_url.startsWith('/uploads/banners/')) ? 'upload' : 'url';
         this.previewUrl = slider.image_url || '';
         this.formAction = SLIDER_BASE_URL + '/' + slider.id;
+        this.isSubmitDisabled = false;
         this.showModal = true;
     },
     handleFileChange(event) {
         const file = event.target.files[0];
         if (file) {
-            this.previewUrl = URL.createObjectURL(file);
+            if (!window.validateGlobalFile(event, 'image', 5)) {
+                this.previewUrl = '';
+                this.isSubmitDisabled = true;
+            } else {
+                this.previewUrl = URL.createObjectURL(file);
+                this.isSubmitDisabled = false;
+            }
+        } else {
+            this.isSubmitDisabled = false;
         }
     }
 }">
@@ -103,11 +114,11 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right space-x-1">
-                            <button @click="openEdit({{ json_encode($slider) }})"
-                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                                <i class="fas fa-edit"></i>
-                            </button>
                             @if(auth()->user()->isSuperAdmin())
+                                <button @click="openEdit({{ json_encode($slider) }})"
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <form action="{{ route('admin.sliders.destroy', $slider->id) }}"
                                       method="POST" class="inline"
                                       onsubmit="return confirm('Hapus banner ini?')">
@@ -205,7 +216,7 @@
                 <div x-show="imageMode === 'upload'">
                     <label class="block font-bold text-slate-700 mb-1">
                         Upload Foto Banner
-                        <span class="font-normal text-slate-400">(JPG, PNG, WEBP — maks. 5MB)</span>
+                        <span class="font-normal text-slate-400">(JPG, JPEG, PNG — maks. 5MB)</span>
                     </label>
                     <div class="relative border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50/50"
                          @click="$refs.fileInput.click()">
@@ -275,11 +286,13 @@
 
                 {{-- Action Buttons --}}
                 <div class="pt-4 flex justify-end gap-2 border-t border-slate-100">
-                    <button type="button" @click="showModal = false"
+                    <button type="button" @click="showModal = false; isSubmitDisabled = false"
                             class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">
                         Batal
                     </button>
                     <button type="submit"
+                            :disabled="isSubmitDisabled"
+                            :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}"
                             class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md">
                         Simpan Banner
                     </button>

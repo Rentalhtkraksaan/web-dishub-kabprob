@@ -241,43 +241,64 @@
     $igUrl = $settings['instagram_url'] ?? ('https://www.instagram.com/' . $igUsername . '/');
 @endphp
 
-<!-- Instagram Embed (Embed Resmi Profile & Feed) -->
-<aside class="getStartedAsideBlock py-6">
+@php
+    $tiktokUrl = $settings['tiktok_url'] ?? ('https://www.tiktok.com/@' . $igUsername);
+@endphp
+
+<!-- Social Media Embeds (IG, TikTok, FB) -->
+<aside class="getStartedAsideBlock py-6 bg-light">
     <div class="container">
-        <div class="gsabHolder bg-white shadowLg fzMedium position-relative overflow-hidden rounded-2xl border">
-            <div class="px-4 py-3 bg-white border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="d-flex align-items-center">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-danger text-white rounded-circle mr-2" style="width: 36px; height: 36px;">
-                        <i class="fab fa-instagram" style="font-size: 1.2rem;"></i>
+        <div class="text-center mb-5">
+            <h3 class="font-weight-bold text-dark" style="font-family: 'Outfit', sans-serif;">Sosial Media Resmi</h3>
+            <p class="text-muted">Ikuti informasi dan dokumentasi terbaru kami di berbagai platform sosial media</p>
+        </div>
+        
+        <div class="d-flex flex-column align-items-center">
+            <!-- Instagram Embed -->
+            <div class="w-100 mb-5" style="max-width: 600px;">
+                <div class="gsabHolder bg-white shadow-sm position-relative overflow-hidden rounded-2xl border">
+                    <div class="px-3 py-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="d-inline-flex align-items-center justify-content-center text-white rounded-circle mr-2" style="width: 32px; height: 32px; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
+                                <i class="fab fa-instagram" style="font-size: 1rem;"></i>
+                            </div>
+                            <h4 class="m-0 font-weight-bold text-dark" style="font-size: 0.9rem;">Instagram</h4>
+                        </div>
+                        <a href="{{ $igUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm text-white font-weight-bold px-2 py-1 rounded" style="background: #dc2743; font-size: 0.75rem;">
+                            Follow
+                        </a>
                     </div>
-                    <div>
-                        <h4 class="m-0 font-weight-bold text-dark" style="font-size: 1rem; font-family: 'Outfit', sans-serif;">
-                            Instagram Resmi @<span class="text-primary">{{ $igUsername }}</span>
-                        </h4>
-                        <span class="text-muted" style="font-size: 0.75rem;">Dokumentasi & Informasi Terupdate Publik</span>
+                    <div class="w-100 p-2 bg-light d-flex justify-content-center" style="max-height: 520px; overflow-y: auto;">
+                        <blockquote class="instagram-media"
+                            data-instgrm-permalink="{{ $igUrl }}?utm_source=ig_embed&amp;utm_campaign=loading"
+                            data-instgrm-version="14"
+                            style="background: #fff; border: 0; border-radius: 8px; box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.5), 0 1px 10px 0 rgba(0, 0, 0, 0.15); margin: 1px auto; max-width: 100%; min-width: 300px; padding: 0; width: 100%;">
+                        </blockquote>
                     </div>
                 </div>
-                <a href="{{ $igUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-danger font-weight-bold px-3 py-1.5 rounded-lg shadow-sm">
-                    <i class="fab fa-instagram mr-1"></i> Kunjungi Profile Instagram
-                </a>
             </div>
-            <div class="w-100 p-2 bg-light">
-                <blockquote class="instagram-media"
-                    data-instgrm-permalink="{{ $igUrl }}?utm_source=ig_embed&amp;utm_campaign=loading"
-                    data-instgrm-version="14"
-                    style="
-                        background: #fff;
-                        border: 0;
-                        border-radius: 8px;
-                        box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.5), 0 1px 10px 0 rgba(0, 0, 0, 0.15);
-                        margin: 1px auto;
-                        max-width: 100%;
-                        min-width: 326px;
-                        padding: 0;
-                        width: 99.375%;
-                        width: calc(100% - 2px);
-                    ">
-                </blockquote>
+
+            <!-- TikTok Embed -->
+            <div class="w-100 mb-5" style="max-width: 600px;">
+                <div class="gsabHolder bg-white shadow-sm position-relative overflow-hidden rounded-2xl border">
+                    <div class="px-3 py-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-dark text-white rounded-circle mr-2" style="width: 32px; height: 32px;">
+                                <i class="fab fa-tiktok" style="font-size: 1rem;"></i>
+                            </div>
+                            <h4 class="m-0 font-weight-bold text-dark" style="font-size: 0.9rem;">TikTok</h4>
+                        </div>
+                        <a href="{{ $tiktokUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-dark font-weight-bold px-2 py-1 rounded" style="font-size: 0.75rem;">
+                            Follow
+                        </a>
+                    </div>
+                    <div class="w-100 p-2 bg-light d-flex justify-content-center align-items-start" style="max-height: 520px; overflow-y: auto;">
+                        <blockquote class="tiktok-embed" cite="{{ $tiktokUrl }}" data-unique-id="{{ $igUsername }}" data-embed-type="creator" style="max-width: 100%; min-width: 300px; margin: 0;">
+                            <section> <a target="_blank" href="{{ $tiktokUrl }}?refer=creator_embed">@{{ $igUsername }}</a> </section>
+                        </blockquote>
+                        <script async src="https://www.tiktok.com/embed.js"></script>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

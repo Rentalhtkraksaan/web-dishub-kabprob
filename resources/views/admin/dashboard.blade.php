@@ -240,7 +240,7 @@
     </div>
 
     <!-- ===== STRUKTUR ORGANISASI DISHUB BAGAN VISUAL (DASHBOARD) ===== -->
-    @if(isset($orgNodes) && count($orgNodes) > 0)
+    @if(isset($orgNodes) && count($orgNodes) > 0 && auth()->user()->isDeveloper())
         <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>

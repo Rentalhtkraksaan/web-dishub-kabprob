@@ -81,10 +81,22 @@
                             @endif
                         </form>
 
+                        @if(auth()->user()->isSuperAdmin() || $menu->created_by === auth()->id())
                         <button @click="showModal = true; editMode = true; currentMenu = {{ json_encode($menu) }}" 
                                 class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1 shadow-xs" title="Edit Menu Utama">
                             <i class="fas fa-edit text-xs"></i> Edit
                         </button>
+                        
+                        @if(!in_array(strtoupper(trim($menu->title)), ['HOME', 'PROFIL', 'LAYANAN', 'DOKUMEN', 'INFORMASI', 'HUBUNGI', 'LOGIN']))
+                        <form action="{{ url('admin/menus/' . $menu->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus menu utama ini beserta seluruh sub-menunya?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1 shadow-xs" title="Hapus Menu Utama">
+                                <i class="fas fa-trash-alt text-xs"></i> Hapus
+                            </button>
+                        </form>
+                        @endif
+                        @endif
                     </div>
                 </div>
 
@@ -92,6 +104,7 @@
                 @if($menu->children && count($menu->children) > 0)
                     <div class="p-3 bg-white divide-y divide-slate-100 pl-8 border-t border-slate-100">
                         @foreach($menu->children as $child)
+                            @if(strtolower(trim($child->title)) === 'survei kepuasan masyarakat') @continue @endif
                             <div class="py-2.5 flex items-center justify-between gap-4 text-xs hover:bg-slate-50/50 px-2 rounded-xl transition-colors">
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-level-up-alt rotate-90 text-slate-300"></i>
@@ -135,10 +148,22 @@
                                         @endif
                                     </form>
 
+                                    @if(auth()->user()->isSuperAdmin() || $child->created_by === auth()->id())
                                     <button @click="showModal = true; editMode = true; currentMenu = {{ json_encode($child) }}" 
                                             class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-bold rounded-lg transition text-[10px] inline-flex items-center gap-1" title="Edit Sub-menu">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
+                                    
+                                    @if(!in_array(strtolower(trim($child->title)), ['struktur organisasi', 'visi misi', 'tugas dan fungsi', 'semua layanan publik dishub', 'perencanaan kinerja', 'pengukuran kinerja', 'pelaporan kinerja', 'evaluasi kinerja', 'berita', 'ppid', 'video', 'galery', 'lapor sp4n', 'kontak']))
+                                    <form action="{{ url('admin/menus/' . $child->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus sub-menu ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-bold rounded-lg transition text-[10px] inline-flex items-center gap-1" title="Hapus Sub-menu">
+                                            <i class="fas fa-trash-alt"></i> Hapus
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -151,7 +176,7 @@
 
     <!-- ===== MODAL FORM (ADD / EDIT MENU WITH IMAGE, PDF, & CAPTION) ===== -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div @click.away="showModal = false" class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-slate-100 relative my-8">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">
@@ -178,8 +203,12 @@
                 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Parent Menu (Kosongkan Jika Ini Menu Utama)</label>
-                    <select name="parent_id" x-model="currentMenu.parent_id" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold">
+                    <select name="parent_id" x-model="currentMenu.parent_id" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-semibold" {{ !auth()->user()->isSuperAdmin() ? 'required' : '' }}>
+                        @if(auth()->user()->isSuperAdmin())
                         <option value="">-- Main Menu Utama Header --</option>
+                        @else
+                        <option value="" disabled>-- Pilih Induk Menu (Wajib) --</option>
+                        @endif
                         @foreach($allParents as $parent)
                             <option value="{{ $parent->id }}">{{ $parent->title }}</option>
                         @endforeach
@@ -206,7 +235,7 @@
                         <span class="flex items-center gap-1.5"><i class="fas fa-image text-amber-500"></i> Upload Foto Banner Menu / Sub-Menu</span>
                         <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Rasio 16:9</span>
                     </label>
-                    <input type="file" name="image_file" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer">
+                    <input type="file" name="image_file" accept="image/jpeg, image/png, image/jpg, image/webp" @change="window.validateGlobalFile($event, 'image', 5)" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer">
                     <input type="text" name="image_url" x-model="currentMenu.image_url" placeholder="Atau masukkan URL Foto (https://...)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-[11px] focus:ring-2 focus:ring-blue-600 focus:outline-none">
                     
                     <template x-if="currentMenu.image_url">
@@ -225,7 +254,7 @@
                         <span class="flex items-center gap-1.5"><i class="fas fa-file-pdf text-rose-600"></i> Upload Berkas PDF Menu / Sub-Menu</span>
                         <span class="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">PDF Dokumen</span>
                     </label>
-                    <input type="file" name="pdf_file" accept="application/pdf" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white cursor-pointer">
+                    <input type="file" name="pdf_file" accept="application/pdf" @change="window.validateGlobalFile($event, 'pdf', 10)" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white cursor-pointer">
                     <input type="text" name="pdf_url" x-model="currentMenu.pdf_url" placeholder="Atau URL Dokumen PDF (https://...)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-[11px] focus:ring-2 focus:ring-blue-600 focus:outline-none">
                     
                     <template x-if="currentMenu.pdf_url">

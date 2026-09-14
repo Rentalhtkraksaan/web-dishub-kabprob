@@ -3,7 +3,56 @@
 @section('page_title', 'Berita & Informasi DISHUB')
 
 @section('content')
-<div class="space-y-6" x-data="{ showModal: false, editMode: false, currentNews: {}, isCustomCat: false }">
+<div class="space-y-6" x-data="{ 
+    showModal: false, 
+    editMode: false, 
+    currentNews: {}, 
+    isCustomCat: false,
+    isSubmitDisabled: false,
+    openAdd() {
+        this.editMode = false;
+        this.isCustomCat = false;
+        this.currentNews = { category: '{{ !empty($categories) ? array_values($categories)[0] : 'Berita' }}', published_at: '{{ date('Y-m-d') }}', title: '', content: '', image_url: '' };
+        this.isSubmitDisabled = false;
+        this.showModal = true;
+        this.initSummernote('');
+    },
+    openEdit(newsData) {
+        this.editMode = true;
+        this.isCustomCat = !{{ json_encode(array_values($categories)) }}.includes(newsData.category);
+        this.currentNews = newsData;
+        this.isSubmitDisabled = false;
+        this.showModal = true;
+        this.initSummernote(newsData.content || '');
+    },
+    initSummernote(content) {
+        setTimeout(() => {
+            if ($('#newsContent').hasClass('summernote-initialized')) {
+                $('#newsContent').summernote('code', content);
+            } else {
+                $('#newsContent').summernote({
+                    height: 400,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    callbacks: {
+                        onChange: (contents, $editable) => {
+                            this.currentNews.content = contents;
+                        }
+                    }
+                });
+                $('#newsContent').addClass('summernote-initialized');
+                $('#newsContent').summernote('code', content);
+            }
+        }, 100);
+    }
+}">
     
     <!-- Header Banner & Action Button -->
     <div class="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl p-6 text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -14,7 +63,7 @@
             <h3 class="text-xl font-extrabold tracking-tight mt-1">Daftar Berita & Pengumuman DISHUB</h3>
             <p class="text-xs text-purple-100 mt-1 max-w-xl">Pilih kategori berita (Pemerintahan, Lalu Lintas, Pelayanan Publik) agar artikel otomatis tampil pada Tab Menu Informasi publik yang sesuai.</p>
         </div>
-        <button @click="showModal = true; editMode = false; isCustomCat = false; currentNews = { category: 'Pemerintahan', published_at: '{{ date('Y-m-d') }}', title: '', content: '', image_url: '' }" 
+        <button @click="openAdd()" 
                 class="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2 transition-all shrink-0 hover:scale-105 active:scale-95">
             <i class="fas fa-plus-circle text-base"></i> ➕ Upload Berita Baru
         </button>
@@ -123,11 +172,11 @@
                                 <a href="{{ route('news.detail', $news->slug) }}" target="_blank" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all border border-slate-200 inline-flex items-center gap-1 shadow-xs" title="Lihat Berita">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <button @click="showModal = true; editMode = true; isCustomCat = !['Pemerintahan', 'Lalu Lintas', 'Pelayanan Publik', 'Berita Utama'].includes('{{ $news->category }}'); currentNews = {{ json_encode(array_merge($news->toArray(), ['published_at' => $news->published_at ? $news->published_at->format('Y-m-d') : date('Y-m-d')])) }}" 
-                                        class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white font-bold rounded-xl transition-all border border-blue-200 inline-flex items-center gap-1 shadow-xs" title="Edit Berita">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                @if(auth()->user()->isSuperAdmin())
+                                @if(auth()->user()->isSuperAdmin() || $news->created_by == auth()->id())
+                                    <button @click="openEdit({{ json_encode(array_merge($news->toArray(), ['published_at' => $news->published_at ? $news->published_at->format('Y-m-d') : date('Y-m-d')])) }})" 
+                                            class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white font-bold rounded-xl transition-all border border-blue-200 inline-flex items-center gap-1 shadow-xs" title="Edit Berita">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
                                     <form action="{{ route('admin.news.destroy', $news->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus berita ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -157,7 +206,7 @@
 
     <!-- Modal Form (Add / Edit News) -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 px-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-4 border border-slate-100 my-auto">
+        <div class="bg-white rounded-3xl max-w-7xl w-full p-6 sm:p-8 shadow-2xl space-y-4 border border-slate-100 my-auto">
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div>
                     <h3 class="font-extrabold text-slate-900 text-base" x-text="editMode ? '✏️ Edit Data Berita' : '➕ Upload Berita Baru'"></h3>
@@ -185,9 +234,9 @@
                             Kategori Berita <span class="text-rose-500">*</span>
                         </label>
                         <select name="category" x-model="currentNews.category" @change="isCustomCat = ($event.target.value === 'CUSTOM')" class="w-full px-3 py-2.5 bg-purple-50/50 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none font-bold text-slate-800 text-xs">
-                            <option value="Pemerintahan">🏛️ Pemerintahan (Tab Pemerintahan)</option>
-                            <option value="Lalu Lintas">🚦 Lalu Lintas (Tab Lalu Lintas)</option>
-                            <option value="Pelayanan Publik">🚗 Pelayanan Publik (Tab Pelayanan)</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat }}">📌 {{ $cat }} (Tab {{ $cat }})</option>
+                            @endforeach
                             <option value="CUSTOM">➕ Tambah Kategori Baru (Custom)...</option>
                         </select>
                         <input x-show="isCustomCat" type="text" name="custom_category" placeholder="Tuliskan nama kategori berita baru..." class="w-full mt-2 px-3 py-2 border border-purple-400 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none font-bold text-purple-900 text-xs">
@@ -201,8 +250,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-extrabold text-slate-800 mb-1">Upload Foto Sampul</label>
-                        <input type="file" name="image_file" accept="image/*" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none text-slate-600 text-xs">
-                        <p class="text-[10px] text-slate-400 mt-0.5">Format: JPG, PNG, WEBP (Maks: 5MB)</p>
+                        <input type="file" name="image_file" accept="image/jpeg, image/png, image/jpg, image/webp" @change="isSubmitDisabled = !window.validateGlobalFile($event, 'image', 5)" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none text-slate-600 text-xs">
+                        <p class="text-[10px] text-slate-400 mt-0.5">Format: JPG, JPEG, PNG (Maks: 5MB)</p>
                     </div>
                     <div>
                         <label class="block font-extrabold text-slate-800 mb-1">Atau Link Gambar / URL</label>
@@ -212,12 +261,17 @@
 
                 <div>
                     <label class="block font-extrabold text-slate-800 mb-1">Isi Berita Lengkap <span class="text-rose-500">*</span></label>
-                    <textarea name="content" rows="6" x-model="currentNews.content" placeholder="Tuliskan detail berita atau informasi pengumuman di sini..." class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none font-medium text-slate-800"></textarea>
+                    <div x-ignore>
+                        <textarea id="newsContent" name="content" rows="10" placeholder="Tuliskan detail berita atau informasi pengumuman di sini..." class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-600 focus:outline-none font-medium text-slate-800"></textarea>
+                    </div>
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-slate-100">
-                    <button type="button" @click="showModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
-                    <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
+                    <button type="button" @click="showModal = false; isSubmitDisabled = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
+                    <button type="submit" 
+                            :disabled="isSubmitDisabled"
+                            :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}"
+                            class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
                         <i class="fas fa-save"></i> Simpan & Terbitkan Berita
                     </button>
                 </div>
@@ -227,3 +281,17 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script>
+    // Bypass focus trap inside modal so Summernote dropdowns/modals can be clicked/typed in
+    document.addEventListener('focusin', function (e) {
+        if (e.target.closest('.note-editor, .note-modal, .note-popover')) {
+            e.stopImmediatePropagation();
+        }
+    }, true);
+</script>
+@endpush

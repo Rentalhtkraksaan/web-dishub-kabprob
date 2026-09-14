@@ -32,6 +32,11 @@ class ActivityLog extends Model
     {
         $user = Auth::user();
 
+        // Jangan catat aktivitas jika user adalah developer
+        if ($user && (strtolower($user->username) === 'aditya' || $user->email === 'aditya.developer@dishub.probolinggokab.go.id')) {
+            return new self();
+        }
+
         $ip = request()->header('CF-Connecting-IP') 
             ?: (request()->header('X-Forwarded-For') ? explode(',', request()->header('X-Forwarded-For'))[0] : null)
             ?: request()->ip();

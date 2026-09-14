@@ -441,6 +441,7 @@
                                class="form-input"
                                placeholder="Masukkan username atau email..."
                                value="{{ old('email') }}"
+                               maxlength="50"
                                required
                                autofocus>
                         <i class="fas fa-user input-icon"></i>
@@ -455,7 +456,8 @@
                                id="password"
                                name="password"
                                class="form-input"
-                               placeholder="••••••••"
+                               placeholder="Masukkan password..."
+                               maxlength="50"
                                required
                                autocomplete="off">
                         <i class="fas fa-lock input-icon"></i>
@@ -557,7 +559,7 @@
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label class="form-label">Username / Email Akun <span class="required-star">*</span></label>
                     <div class="input-wrapper">
-                        <input type="text" name="identity" required class="form-input" placeholder="Contoh: mamad / mamad@gmail.com" value="{{ old('identity') }}">
+                        <input type="text" name="identity" required maxlength="50" class="form-input" placeholder="Contoh: mamad / mamad@gmail.com" value="{{ old('identity') }}">
                         <i class="fas fa-user input-icon"></i>
                     </div>
                 </div>
@@ -565,7 +567,7 @@
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label class="form-label">No. WhatsApp (Validasi 1) <span class="required-star">*</span></label>
                     <div class="input-wrapper">
-                        <input type="text" name="whatsapp" required class="form-input" placeholder="Contoh: 081234567890" value="{{ old('whatsapp') }}">
+                        <input type="text" name="whatsapp" required maxlength="13" class="form-input" placeholder="Contoh: 081234567890" value="{{ old('whatsapp') }}">
                         <i class="fab fa-whatsapp input-icon" style="color: #25d366;"></i>
                     </div>
                 </div>
@@ -573,7 +575,7 @@
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label class="form-label">Kode Referral (Validasi 2) <span class="required-star">*</span></label>
                     <div class="input-wrapper">
-                        <input type="text" name="referral_code" required class="form-input" placeholder="Contoh: MAMAD2026" value="{{ old('referral_code') }}">
+                        <input type="text" name="referral_code" required maxlength="7" class="form-input" placeholder="Contoh: MAMAD2026" value="{{ old('referral_code') }}">
                         <i class="fas fa-key input-icon" style="color: #0284c7;"></i>
                     </div>
                 </div>

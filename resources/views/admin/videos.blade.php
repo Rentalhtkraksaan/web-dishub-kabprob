@@ -6,6 +6,7 @@
 <div class="w-full space-y-6" x-data="{ 
     showModal: false, 
     editMode: false, 
+    isSubmitDisabled: false,
     currentVideo: { title: '', video_url: '', thumbnail_url: '', description: '', published_at: '' },
     youtubePreview: '',
     updateYoutubePreview(url) {
@@ -40,6 +41,39 @@
             this.youtubePreview = '';
         }
         this.showModal = true;
+    },
+    validateFile(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format File Tidak Valid',
+                    text: 'Hanya file gambar (JPG, JPEG, PNG, WEBP) yang diperbolehkan untuk thumbnail!',
+                    background: '#fff',
+                    confirmButtonColor: '#e11d48',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+                e.target.value = ''; // clear input
+                this.isSubmitDisabled = true;
+            } else if (file.size > 2 * 1024 * 1024) { // 2MB
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ukuran File Terlalu Besar',
+                    text: 'Maksimal ukuran file thumbnail adalah 2MB.',
+                    background: '#fff',
+                    confirmButtonColor: '#e11d48',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+                e.target.value = '';
+                this.isSubmitDisabled = true;
+            } else {
+                this.isSubmitDisabled = false;
+            }
+        } else {
+            this.isSubmitDisabled = false; // Karena opsional
+        }
     }
 }">
     
@@ -193,11 +227,11 @@
 
                             <!-- Actions -->
                             <td class="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
-                                <button @click="openModal({{ json_encode($video) }})" 
-                                        class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Video">
-                                    <i class="fas fa-edit text-xs"></i> Edit
-                                </button>
-                                @if(auth()->user()->isSuperAdmin())
+                                @if(auth()->user()->isSuperAdmin() || $video->created_by == auth()->id())
+                                    <button @click="openModal({{ json_encode($video) }})" 
+                                            class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Video">
+                                        <i class="fas fa-edit text-xs"></i> Edit
+                                    </button>
                                     <form action="{{ route('admin.videos.destroy', $video->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus video ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -230,7 +264,7 @@
 
     <!-- ===== MODAL FORM (ADD / EDIT VIDEO) ===== -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div @click.away="showModal = false" class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-100 relative my-8">
             
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-3">
@@ -303,7 +337,8 @@
                     </label>
                     <input type="file" 
                            name="thumbnail_file" 
-                           accept="image/*" 
+                           accept="image/jpeg, image/png, image/jpg, image/webp"
+                           @change="validateFile($event)"
                            class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white hover:file:bg-rose-700 cursor-pointer">
                     <p class="text-[10px] text-slate-400">Kosongkan jika ingin menggunakan thumbnail cover bawaan dari YouTube secara otomatis.</p>
                 </div>
@@ -331,7 +366,7 @@
                     <button type="button" @click="showModal = false" class="px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl shadow-lg shadow-rose-600/30 flex items-center gap-2">
+                    <button type="submit" :disabled="isSubmitDisabled" :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all">
                         <i class="fas fa-save"></i>
                         <span>Simpan Video</span>
                     </button>

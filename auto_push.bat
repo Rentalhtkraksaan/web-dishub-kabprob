@@ -10,3 +10,5 @@ git push
 :: Menunggu selama 30 detik sebelum mengecek lagi
 timeout /t 30 >nul
 goto loop
+
+

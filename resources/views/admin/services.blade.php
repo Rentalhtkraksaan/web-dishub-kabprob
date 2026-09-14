@@ -3,7 +3,53 @@
 @section('page_title', 'Layanan Publik DISHUB')
 
 @section('content')
-<div class="space-y-6" x-data="{ showModal: false, editMode: false, currentService: {} }">
+<div class="space-y-6" x-data="{ 
+    showModal: false, 
+    editMode: false, 
+    currentService: {}, 
+    isSubmitDisabled: false,
+    openAdd() {
+        this.editMode = false;
+        this.currentService = { icon: 'fas fa-cogs', is_active: true, order: 0 };
+        this.isSubmitDisabled = false;
+        this.showModal = true;
+        this.initSummernote('');
+    },
+    openEdit(serviceData) {
+        this.editMode = true;
+        this.currentService = serviceData;
+        this.isSubmitDisabled = false;
+        this.showModal = true;
+        this.initSummernote(serviceData.content || '');
+    },
+    initSummernote(content) {
+        setTimeout(() => {
+            if ($('#serviceContent').hasClass('summernote-initialized')) {
+                $('#serviceContent').summernote('code', content);
+            } else {
+                $('#serviceContent').summernote({
+                    height: 300,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    callbacks: {
+                        onChange: (contents, $editable) => {
+                            this.currentService.content = contents;
+                        }
+                    }
+                });
+                $('#serviceContent').addClass('summernote-initialized');
+                $('#serviceContent').summernote('code', content);
+            }
+        }, 100);
+    }
+}">
     
     <!-- Header Banner -->
     <div class="bg-gradient-to-r from-teal-900 to-cyan-900 rounded-3xl p-6 text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -18,7 +64,7 @@
             <a href="{{ route('admin.informasi_tabs') }}" class="px-4 py-2.5 bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs rounded-xl flex items-center gap-1 transition-all">
                 <i class="fas fa-table-columns"></i> Kelola Tab Informasi
             </a>
-            <button @click="showModal = true; editMode = false; currentService = { icon: 'fas fa-cogs', is_active: true, order: 0 }" 
+            <button @click="openAdd()" 
                     class="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
                 <i class="fas fa-plus-circle text-base"></i> ➕ Tambah Layanan
             </button>
@@ -137,11 +183,11 @@
                                 <a href="{{ route('layanan.detail', $service->slug) }}" target="_blank" class="px-2 py-1.5 bg-slate-50 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all border border-slate-200 inline-flex items-center gap-1" title="Lihat di Website">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <button @click="showModal = true; editMode = true; currentService = {{ json_encode($service) }}" 
+                                @if(auth()->user()->isSuperAdmin() || $service->created_by == auth()->id())
+                                    <button @click="openEdit({{ json_encode($service) }})" 
                                         class="px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white font-bold rounded-xl transition-all border border-blue-200 inline-flex items-center gap-1" title="Edit">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                @if(auth()->user()->isSuperAdmin())
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
                                     <form action="{{ route('admin.services.destroy', $service->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus layanan ini?')">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white font-bold rounded-xl transition-all border border-rose-200 inline-flex items-center gap-1">
@@ -169,7 +215,7 @@
 
     <!-- Modal Form Tambah / Edit Layanan -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-        <div @click.away="showModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <h3 class="font-extrabold text-slate-900 text-base" x-text="editMode ? '✏️ Edit Layanan Publik' : '➕ Tambah Layanan Publik Baru'"></h3>
                 <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
@@ -205,7 +251,9 @@
 
                     <div>
                         <label class="block font-extrabold text-slate-800 mb-1 text-xs">Deskripsi Lengkap & Prosedur Layanan</label>
-                        <textarea name="content" x-model="currentService.content" rows="4" placeholder="Tuliskan persyaratan, alur, jadwal, dan biaya (jika ada)..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium text-xs"></textarea>
+                        <div x-ignore>
+                            <textarea id="serviceContent" name="content" x-model="currentService.content" rows="4" placeholder="Tuliskan persyaratan, alur, jadwal, dan biaya (jika ada)..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium text-xs"></textarea>
+                        </div>
                     </div>
 
                     <!-- Upload Foto Banner / Gambar Layanan -->
@@ -217,7 +265,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold text-slate-600 mb-1 text-[11px]">Upload File Gambar</label>
-                                <input type="file" name="image_file" accept="image/*" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-slate-600 text-[11px]">
+                                <input type="file" name="image_file" accept=".jpg,.jpeg,.png" @change="const file = $event.target.files[0]; if(file) { const ext = file.name.split('.').pop().toLowerCase(); if(!['jpg','jpeg','png'].includes(ext)) { Swal.fire({icon: 'error', title: 'Format Tidak Valid', text: 'Wajib mengunggah foto dengan ekstensi JPG, JPEG, atau PNG!'}); $event.target.value = ''; isSubmitDisabled = true; } else { isSubmitDisabled = false; } } else { isSubmitDisabled = false; }" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none text-slate-600 text-[11px]">
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-600 mb-1 text-[11px]">Atau URL Gambar</label>
@@ -235,7 +283,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold text-slate-600 mb-1 text-[11px]">Upload File PDF Baru</label>
-                                <input type="file" name="pdf_file" accept=".pdf" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none text-slate-600 text-[11px]">
+                                <input type="file" name="pdf_file" accept=".pdf" @change="const file = $event.target.files[0]; if(file) { const ext = file.name.split('.').pop().toLowerCase(); if(ext !== 'pdf') { Swal.fire({icon: 'error', title: 'Format Tidak Valid', text: 'Wajib mengunggah berkas dengan ekstensi PDF!'}); $event.target.value = ''; isSubmitDisabled = true; } else { isSubmitDisabled = false; } } else { isSubmitDisabled = false; }" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none text-slate-600 text-[11px]">
                                 <p class="text-[10px] text-slate-400 mt-1">Maksimal 25MB (Format: .pdf)</p>
                             </div>
                             <div>
@@ -270,8 +318,8 @@
                 </div>
 
                 <div class="pt-4 flex justify-end gap-3 border-t border-slate-100">
-                    <button type="button" @click="showModal = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
-                    <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
+                    <button type="button" @click="showModal = false; isSubmitDisabled = false" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl transition-all">Batal</button>
+                    <button type="submit" :disabled="isSubmitDisabled" :class="{'opacity-50 cursor-not-allowed': isSubmitDisabled}" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2">
                         <i class="fas fa-save"></i> Simpan Layanan
                     </button>
                 </div>
@@ -281,3 +329,17 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script>
+    // Bypass focus trap inside modal so Summernote dropdowns/modals can be clicked/typed in
+    document.addEventListener('focusin', function (e) {
+        if (e.target.closest('.note-editor, .note-modal, .note-popover')) {
+            e.stopImmediatePropagation();
+        }
+    }, true);
+</script>
+@endpush

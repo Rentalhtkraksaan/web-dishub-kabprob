@@ -36,6 +36,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
 
     <style>
+        .hdDropdownList {
+            max-height: 270px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
         .select2,
         .select2-search__field,
         .select2-results__option {             
@@ -378,6 +383,55 @@
             color: #ffffff !important;
             transform: translateY(-3px);
         }
+
+        /* Mobile Menu Fix (Resolving theme's broken gaps) */
+        @media (max-width: 767.98px) {
+            #pageMainNavCollapse .mainNavigation {
+                display: block !important;
+                margin: 0 !important;
+                padding: 10px 0 !important;
+            }
+            #pageMainNavCollapse .nav-item {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            #pageMainNavCollapse .nav-link {
+                display: block !important;
+                padding: 12px 20px !important;
+                color: #0f172a !important;
+            }
+            #pageMainNavCollapse .desktopDropOnHover {
+                position: static !important;
+                display: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                float: none !important;
+            }
+            #pageMainNavCollapse .dropdown.show .desktopDropOnHover {
+                display: block !important;
+            }
+            #pageMainNavCollapse .hdDropdownList {
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                background-color: #f8fafc;
+            }
+            #pageMainNavCollapse .hdDropdownList > li > a {
+                display: block !important;
+                padding: 10px 20px 10px 40px !important;
+                font-size: 0.85rem !important;
+                border-bottom: 1px solid #e2e8f0;
+                color: #475569 !important;
+            }
+        }
+
     </style>
     @yield('styles')
 </head>
@@ -385,7 +439,7 @@
     <div id="pageWrapper" class="d-flex flex-column flex-grow-1">
         
         <!-- STICKY TOP NAVBAR -->
-        <div class="phStickyWrap">
+        <div class="phStickyWrap" style="position: relative; z-index: 1040;">
             <header id="pageHeader" class="bg-white"> 
                 <div class="hdFixerWrap py-2 py-md-3 py-xl-2 sSticky bg-white">
                     <div class="container">
@@ -394,7 +448,7 @@
                             <div class="logo flex-shrink-0 mr-3 mr-xl-6 d-flex align-items-center">
                                 <a href="{{ route('home') }}" class="d-flex align-items-center text-decoration-none">
                                     <img src="{{ $settings['logo_frontend'] ?? asset('images/logo_dishub.png') }}" class="img-fluid shrink-0" alt="DISHUB Kabupaten Probolinggo" style="max-height: 48px; width: auto !important; height: auto !important; object-fit: contain !important;">
-                                    <div class="ml-2.5 pl-2.5 border-left border-slate-300 d-none d-sm-block text-left" style="border-left-width: 2px !important; border-color: #cbd5e1 !important; line-height: 1.25;">
+                                    <div class="ml-2 pl-2 ml-sm-4 pl-sm-4 border-left border-slate-300 text-left" style="border-left-width: 2px !important; border-color: #cbd5e1 !important; line-height: 1.25;">
                                         <span class="d-block font-weight-extrabold text-uppercase text-dark" style="font-size: 0.82rem; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif; color: #0f172a !important;">DISHUB</span>
                                         <span class="d-block font-weight-bold text-muted" style="font-size: 0.7rem; color: #64748b !important;">KAB. PROBOLINGGO</span>
                                     </div>
@@ -402,8 +456,8 @@
                             </div>
 
                             <!-- Menu Navigasi Tengah -->
-                            <div class="hdNavWrap flex-grow-1 d-flex align-items-center justify-content-end justify-content-lg-start">
-                                <div class="collapse navbar-collapse pageMainNavCollapse mt-2 mt-md-0" id="pageMainNavCollapse">
+                            <div class="hdNavWrap flex-grow-1 d-flex align-items-center justify-content-end justify-content-xl-center">
+                                <div class="collapse navbar-collapse pageMainNavCollapse mt-2 mt-xl-0" id="pageMainNavCollapse">
                                     <ul class="navbar-nav mainNavigation">
                                         @if(isset($navMenus) && count($navMenus) > 0)
                                             @php $loginRendered = false; @endphp
@@ -556,7 +610,7 @@
 							<div class="ftLogo mb-4">
 								<a href="{{ route('home') }}" class="d-inline-flex align-items-center text-decoration-none">
 									<img src="{{ $settings['logo_frontend'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/logo_frontend.png' }}" class="img_footer shrink-0" alt="DISHUB" style="max-height: 54px; width: auto;">
-									<div class="ml-3 pl-3 text-left" style="border-left: 2px solid rgba(255, 255, 255, 0.2) !important; line-height: 1.25;">
+									<div class="ml-4 pl-4 text-left" style="border-left: 2px solid rgba(255, 255, 255, 0.2) !important; line-height: 1.25;">
 										<span class="d-block font-weight-extrabold text-uppercase text-white" style="font-size: 1rem; letter-spacing: 0.6px; font-family: 'Outfit', sans-serif;">DISHUB</span>
 										<span class="d-block font-weight-bold text-warning" style="font-size: 0.76rem; letter-spacing: 0.3px;">KAB. PROBOLINGGO</span>
 									</div>
@@ -572,10 +626,10 @@
 						<div class="col-12 col-sm-6 col-md-3 col-xl-3 mb-4 mb-md-0">
 							<div>
 								<h3 class="ftHeading text-white mb-3 font-weight-bold" style="font-size: 1.05rem; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">Survei Kepuasan (SKM)</h3>
-								<a href="{{ route('survei') }}" class="d-inline-block p-3 bg-white rounded-xl shadow-sm text-decoration-none border transition-all" style="border: 2px solid #f59e0b !important; max-width: 170px; border-radius: 14px;" title="Isi Survei Kepuasan Masyarakat">
+								<a href="https://esukma.jatimprov.go.id" target="_blank" class="d-inline-block p-3 bg-white rounded-xl shadow-sm text-decoration-none border transition-all" style="border: 2px solid #f59e0b !important; max-width: 170px; border-radius: 14px;" title="Isi Survei Kepuasan Masyarakat">
 									<img src="{{ $settings['qr_code_survey'] ?? 'https://diskominfo.probolinggokab.go.id/backend/gambar/qr_code_kominfo.png' }}" class="img-fluid d-block mx-auto rounded" alt="Survei Kepuasan SKM" style="max-width: 125px; height: auto;">
 									<span class="d-block text-center font-weight-bold mt-2 py-1 bg-warning text-dark rounded-pill" style="font-size: 0.72rem;">
-										<i class="fas fa-edit mr-1"></i> Isi Survei SKM
+										<i class="fas fa-edit mr-1"></i> Isi Survei SKM Jatim
 									</span>
 								</a>
 							</div>
@@ -628,6 +682,15 @@
 					</div>
 				</div>
 			</aside>
+
+			<!-- Social Media Links -->
+			<div class="text-center text-white py-3" style="background: #0f2b5c; border-top: 1px solid rgba(255,255,255,0.1);">
+				<div class="container d-flex justify-content-center gap-3 align-items-center">
+					<span class="mr-3 font-weight-bold" style="font-size: 0.9rem;">Ikuti Kami:</span>
+					<a href="{{ $settings['instagram_url'] ?? 'https://www.instagram.com/dishubkabprobolinggo/' }}" target="_blank" class="text-white mx-2 hover-warning" title="Instagram" style="font-size: 1.3rem; transition: 0.3s;"><i class="fab fa-instagram"></i></a>
+					<a href="{{ $settings['tiktok_url'] ?? 'https://www.tiktok.com/@dishubkabprobolinggo' }}" target="_blank" class="text-white mx-2 hover-warning" title="TikTok" style="font-size: 1.3rem; transition: 0.3s;"><i class="fab fa-tiktok"></i></a>
+				</div>
+			</div>
 
 			<!-- Bottom Copyright Bar -->
 			<footer id="pageFooter" class="text-center text-white py-3" style="background: #040812; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.82rem;">

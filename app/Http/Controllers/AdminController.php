@@ -40,7 +40,7 @@ class AdminController extends Controller
         if (in_array($ext, $blocked) || preg_match('/\.(php|phtml|phar|inc|exe|sh|bat|cmd|js|html|svg)($|\.)/i', $origName)) {
             ActivityLog::record('BLOCKED_FILE_UPLOAD', "Mencoba mengunggah file berbahaya: {$origName}");
             throw \Illuminate\Validation\ValidationException::withMessages([
-                $fieldName => "File '{$origName}' DITOLAK! Unggah file PHP, Script, atau SVG dilarang keras demi keamanan sistem."
+                $fieldName => "File Tidak Valid! File terdeteksi sebagai ekstensi berbahaya."
             ]);
         }
 
@@ -48,19 +48,19 @@ class AdminController extends Controller
             $allowedExts = ['jpg', 'jpeg', 'png'];
             if (!in_array($ext, $allowedExts)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    $fieldName => "Validasi Gagal: File foto/gambar HANYA boleh berformat JPG, JPEG, atau PNG (Format '.{$ext}' tidak diizinkan)."
+                    $fieldName => "File Tidak Valid! Foto hanya boleh berformat JPG, JPEG, atau PNG."
                 ]);
             }
         } elseif ($allowedType === 'pdf') {
             if ($ext !== 'pdf') {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    $fieldName => "Validasi Gagal: File dokumen HANYA boleh berformat PDF (.pdf)."
+                    $fieldName => "File Tidak Valid! Hanya boleh mengunggah file PDF."
                 ]);
             }
         } elseif ($allowedType === 'zip') {
-            if ($ext !== 'zip') {
+            if ($ext !== 'zip' && $ext !== 'rar') {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    $fieldName => "Validasi Gagal: File arsip HANYA boleh berformat ZIP (.zip)."
+                    $fieldName => "File Tidak Valid! Hanya boleh berformat ZIP/RAR."
                 ]);
             }
         } elseif ($allowedType === 'favicon') {
@@ -78,13 +78,13 @@ class AdminController extends Controller
         if (auth()->user()->role !== 'super_admin') {
             abort(403, 'Akses Ditolak');
         }
-        
+
         if ($request->has('active')) {
             \App\Models\SiteSetting::updateOrCreate(['key' => 'visitor_tracking_active'], ['value' => $request->active]);
             $status = $request->active == '1' ? 'diaktifkan' : 'dinonaktifkan';
             ActivityLog::record('TOGGLE_ANALYTICS', "Perekaman statistik pengunjung {$status}.");
         }
-        
+
         return back()->with('success', 'Pengaturan analitik berhasil diperbarui.');
     }
 
@@ -94,13 +94,15 @@ class AdminController extends Controller
             abort(403, 'Akses Ditolak');
         }
 
-        if ($request->input('confirm_1') === 'HAPUS' && 
-            $request->input('confirm_2') === 'LANJUTKAN' && 
-            $request->input('confirm_3') === 'SETUJU') {
-            
+        if (
+            $request->input('confirm_1') === 'HAPUS' &&
+            $request->input('confirm_2') === 'LANJUTKAN' &&
+            $request->input('confirm_3') === 'SETUJU'
+        ) {
+
             ActivityLog::truncate();
             ActivityLog::record('CLEAR_ALL_LOGS', 'Super Admin menghapus seluruh catatan aktivitas sistem.');
-            
+
             return back()->with('success', 'Seluruh catatan aktivitas sistem berhasil dihapus permanen.');
         }
 
@@ -121,8 +123,9 @@ class AdminController extends Controller
         ];
 
         $selectedYear = request('year', now()->year);
-        if ($selectedYear < 2026) $selectedYear = 2026;
-        
+        if ($selectedYear < 2026)
+            $selectedYear = 2026;
+
         $visitorStats = [
             'weekly' => ['labels' => [], 'data' => []],
             'monthly' => ['labels' => [], 'data' => []],
@@ -136,9 +139,9 @@ class AdminController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = $baseDate->copy()->subDays($i)->format('Y-m-d');
             $visitorStats['weekly']['labels'][] = $baseDate->copy()->subDays($i)->locale('id')->translatedFormat('l');
-            $visitorStats['weekly']['data'][] = (int)\App\Models\VisitorStat::where('date', $date)->sum('views');
+            $visitorStats['weekly']['data'][] = (int) \App\Models\VisitorStat::where('date', $date)->sum('views');
         }
-        
+
         // Monthly (Weeks of current month in selected year)
         $targetMonth = $selectedYear == now()->year ? now()->month : 12;
         for ($i = 1; $i <= 4; $i++) {
@@ -146,24 +149,25 @@ class AdminController extends Controller
             // Roughly 7 days per week
             $startDay = ($i - 1) * 7 + 1;
             $endDay = $i * 7;
-            if ($i === 4) $endDay = 31;
-            
+            if ($i === 4)
+                $endDay = 31;
+
             $views = \App\Models\VisitorStat::whereMonth('date', $targetMonth)
-                        ->whereYear('date', $selectedYear)
-                        ->whereRaw('DAY(date) >= ? AND DAY(date) <= ?', [$startDay, $endDay])
-                        ->sum('views');
-            $visitorStats['monthly']['data'][] = (int)$views;
+                ->whereYear('date', $selectedYear)
+                ->whereRaw('DAY(date) >= ? AND DAY(date) <= ?', [$startDay, $endDay])
+                ->sum('views');
+            $visitorStats['monthly']['data'][] = (int) $views;
         }
 
         // Yearly (Months of selected year)
         $bulanNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
         for ($i = 1; $i <= 12; $i++) {
-            $visitorStats['yearly']['labels'][] = $bulanNames[$i-1];
+            $visitorStats['yearly']['labels'][] = $bulanNames[$i - 1];
             $views = \App\Models\VisitorStat::whereMonth('date', $i)->whereYear('date', $selectedYear)->sum('views');
-            $visitorStats['yearly']['data'][] = (int)$views;
+            $visitorStats['yearly']['data'][] = (int) $views;
         }
-        
-        $visitorStats['total'] = (int)\App\Models\VisitorStat::whereYear('date', $selectedYear)->sum('views');
+
+        $visitorStats['total'] = (int) \App\Models\VisitorStat::whereYear('date', $selectedYear)->sum('views');
 
         $latestNews = NewsItem::orderBy('created_at', 'desc')->take(4)->get();
         $latestDocs = PublicDocument::orderBy('created_at', 'desc')->take(4)->get();
@@ -174,30 +178,31 @@ class AdminController extends Controller
 
     public function profileUpdate(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
         $rules = [
-            'name'          => 'required|string|max:255',
-            'username'      => 'required|string|max:255|unique:users,username,' . $user->id,
-            'email'         => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email,' . $user->id],
-            'whatsapp'      => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email,' . $user->id],
+            'whatsapp' => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
             'referral_code' => ['nullable', 'string', 'regex:/^(?=(?:.*[a-zA-Z]){3})(?=(?:.*\d){3})[a-zA-Z\d]{6}$/'],
-            'avatar_file'   => empty($user->avatar) ? 'required|file|mimes:jpeg,jpg,png|max:5120' : 'nullable|file|mimes:jpeg,jpg,png|max:5120',
+            'avatar_file' => empty($user->avatar) ? 'required|file|mimes:jpeg,jpg,png|max:5120' : 'nullable|file|mimes:jpeg,jpg,png|max:5120',
         ];
 
         $messages = [
-            'name.required'       => 'Nama lengkap wajib diisi.',
-            'username.required'   => 'Username wajib diisi.',
-            'username.unique'     => 'Username ini sudah digunakan akun lain.',
-            'email.required'      => 'Email wajib diisi.',
-            'email.email'         => 'Format email tidak valid.',
-            'email.ends_with'     => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
-            'email.unique'        => 'Email ini sudah terdaftar pada akun lain.',
-            'whatsapp.regex'      => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username ini sudah digunakan akun lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.ends_with' => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
+            'email.unique' => 'Email ini sudah terdaftar pada akun lain.',
+            'whatsapp.regex' => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
             'referral_code.regex' => 'Kode Referral harus terdiri dari tepat 3 huruf dan 3 angka (total 6 karakter, contoh: ADI123).',
-            'avatar_file.required'=> 'Foto Profil (PP) baru wajib diunggah!',
-            'avatar_file.mimes'   => 'Foto Profil hanya boleh berupa file JPG, JPEG, atau PNG.',
-            'avatar_file.max'     => 'Ukuran Foto Profil maksimal 5MB.',
+            'avatar_file.required' => 'Foto Profil (PP) baru wajib diunggah!',
+            'avatar_file.mimes' => 'Foto Profil hanya boleh berupa file JPG, JPEG, atau PNG.',
+            'avatar_file.max' => 'Ukuran Foto Profil maksimal 5MB.',
         ];
 
         if ($request->filled('password')) {
@@ -209,7 +214,7 @@ class AdminController extends Controller
                 'regex:/[0-9]/',
                 'regex:/[@$!%*#?&^()_\-+=\[\]{}|\\:;<>,.]/'
             ];
-            $messages['password.min']   = 'Password minimal 8 karakter.';
+            $messages['password.min'] = 'Password minimal 8 karakter.';
             $messages['password.regex'] = 'Password wajib kombinasi huruf besar, huruf kecil, angka, dan kode unik/simbol.';
         }
 
@@ -232,20 +237,20 @@ class AdminController extends Controller
         }
 
         $data = [
-            'name'     => trim($request->name),
-            'username' => trim($request->username),
-            'email'    => trim($request->email),
-            'avatar'   => $avatarUrl,
+            'name' => trim($request->input('name')),
+            'username' => trim($request->input('username')),
+            'email' => trim($request->input('email')),
+            'avatar' => $avatarUrl,
         ];
 
         if ($request->filled('whatsapp')) {
-            $data['whatsapp'] = trim($request->whatsapp);
+            $data['whatsapp'] = trim($request->input('whatsapp'));
         }
         if ($request->filled('referral_code')) {
-            $data['referral_code'] = trim($request->referral_code);
+            $data['referral_code'] = trim($request->input('referral_code'));
         }
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+            $data['password'] = Hash::make($request->input('password'));
         }
 
         $user->update($data);
@@ -254,6 +259,11 @@ class AdminController extends Controller
         ActivityLog::record('UPDATE_PROFILE', "Pengguna \"{$user->name}\" memperbarui data profil/password pribadinya.");
 
         return back()->with('success', 'Profil dan Password berhasil diperbarui!');
+    }
+
+    public function panduan()
+    {
+        return view('admin.panduan');
     }
 
     // --- 1. HERO SLIDERS CRUD ---
@@ -266,9 +276,9 @@ class AdminController extends Controller
     public function sliderStore(Request $request)
     {
         $request->validate([
-            'title'       => 'required|string|max:255',
-            'image_file'  => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'image_url'   => 'nullable|string',
+            'title' => 'required|string|max:255',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'image_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Banner slider HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
@@ -291,13 +301,13 @@ class AdminController extends Controller
         }
 
         $slider = HeroSlider::create([
-            'title'       => $request->title,
-            'subtitle'    => $request->subtitle,
-            'image_url'   => $imageUrl,
+            'title' => $request->title,
+            'subtitle' => $request->subtitle,
+            'image_url' => $imageUrl,
             'button_text' => $request->button_text,
-            'button_url'  => $request->button_url,
-            'order'       => $request->order ?? 0,
-            'is_active'   => $request->has('is_active'),
+            'button_url' => $request->button_url,
+            'order' => $request->order ?? 0,
+            'is_active' => $request->has('is_active'),
         ]);
 
         ActivityLog::record('TAMBAH_SLIDER', "Menambahkan banner slider baru \"{$slider->title}\".");
@@ -309,7 +319,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'image_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'image_url'  => 'nullable|string',
+            'image_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Banner slider HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
@@ -339,13 +349,13 @@ class AdminController extends Controller
         }
 
         $slider->update([
-            'title'       => $request->title,
-            'subtitle'    => $request->subtitle,
-            'image_url'   => $imageUrl,
+            'title' => $request->title,
+            'subtitle' => $request->subtitle,
+            'image_url' => $imageUrl,
             'button_text' => $request->button_text,
-            'button_url'  => $request->button_url,
-            'order'       => $request->order ?? 0,
-            'is_active'   => $request->has('is_active'),
+            'button_url' => $request->button_url,
+            'order' => $request->order ?? 0,
+            'is_active' => $request->has('is_active'),
         ]);
 
         ActivityLog::record('EDIT_SLIDER', "Memperbarui banner slider \"{$slider->title}\".");
@@ -355,8 +365,12 @@ class AdminController extends Controller
 
     public function sliderDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $slider = HeroSlider::findOrFail($id);
         $title = $slider->title;
+        $this->deleteLocalFile($slider->image_url);
         $slider->delete();
 
         ActivityLog::record('HAPUS_SLIDER', "Menghapus banner slider \"{$title}\".");
@@ -383,8 +397,12 @@ class AdminController extends Controller
             'pdf_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Gambar menu HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen menu HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen menu HANYA boleh berformat PDF.',
         ]);
+
+        if (!auth()->user()->isSuperAdmin() && empty($request->parent_id)) {
+            return back()->with('error', 'Akses Ditolak: Admin hanya diperbolehkan membuat Sub-Menu, tidak diizinkan membuat Menu Utama (Induk).');
+        }
 
         if ($request->hasFile('image_file')) {
             $this->validateStrictFile($request->file('image_file'), 'image', 'image_file');
@@ -428,6 +446,7 @@ class AdminController extends Controller
             'pdf_url' => $pdfUrl,
             'description' => $descriptionInput,
             'is_active' => $request->has('is_active'),
+            'created_by' => auth()->id(),
         ]);
 
         // Otomatis buat/sinkronkan Halaman Publik di website utama agar langsung tayang saat diklik tanpa 404
@@ -457,6 +476,14 @@ class AdminController extends Controller
     {
         $menu = NavigationMenu::findOrFail($id);
 
+        if (!auth()->user()->isSuperAdmin() && $menu->created_by !== auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda hanya bisa mengedit menu/sub-menu yang Anda buat sendiri.');
+        }
+        
+        if (!auth()->user()->isSuperAdmin() && empty($request->parent_id)) {
+            return back()->with('error', 'Akses Ditolak: Admin tidak diizinkan mengubah menu menjadi Menu Utama (Induk).');
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'url' => 'nullable|string',
@@ -466,7 +493,7 @@ class AdminController extends Controller
             'pdf_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Gambar menu HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen menu HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen menu HANYA boleh berformat PDF.',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -543,20 +570,33 @@ class AdminController extends Controller
     public function menuDestroy($id)
     {
         $menu = NavigationMenu::findOrFail($id);
+
+        if (!auth()->user()->isSuperAdmin() && $menu->created_by !== auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda hanya bisa menghapus menu/sub-menu yang Anda buat sendiri.');
+        }
+        
         $title = $menu->title;
+        
+        // Prevent deletion of protected menus
+        $protectedTitles = ['HOME', 'PROFIL', 'LAYANAN', 'DOKUMEN', 'INFORMASI', 'HUBUNGI', 'LOGIN', 'Struktur Organisasi', 'Visi Misi', 'Tugas dan Fungsi', 'Survei Kepuasan Masyarakat', 'Semua Layanan Publik DISHUB', 'Perencanaan Kinerja', 'Pengukuran Kinerja', 'Pelaporan Kinerja', 'Evaluasi Kinerja', 'Berita', 'PPID', 'Video', 'Galery', 'Lapor SP4N', 'Kontak'];
+        if (in_array(strtolower(trim($title)), array_map('strtolower', $protectedTitles))) {
+            return back()->with('error', 'Akses Ditolak: Menu bawaan sistem ini tidak boleh dihapus karena terikat dengan fitur lain.');
+        }
 
         // Save deleted menu attributes in session for UNDO capability
-        session(['last_deleted_menu' => [
-            'title'       => $menu->title,
-            'url'         => $menu->url,
-            'parent_id'   => $menu->parent_id,
-            'order'       => $menu->order,
-            'target'      => $menu->target,
-            'image_url'   => $menu->image_url,
-            'pdf_url'     => $menu->pdf_url,
-            'description' => $menu->description,
-            'is_active'   => $menu->is_active,
-        ]]);
+        session([
+            'last_deleted_menu' => [
+                'title' => $menu->title,
+                'url' => $menu->url,
+                'parent_id' => $menu->parent_id,
+                'order' => $menu->order,
+                'target' => $menu->target,
+                'image_url' => $menu->image_url,
+                'pdf_url' => $menu->pdf_url,
+                'description' => $menu->description,
+                'is_active' => $menu->is_active,
+            ]
+        ]);
 
         $menu->delete();
 
@@ -568,6 +608,9 @@ class AdminController extends Controller
     public function menuToggleActive($id)
     {
         $menu = NavigationMenu::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $menu->created_by !== auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda hanya bisa mengubah status menu yang Anda buat sendiri.');
+        }
         $menu->is_active = !$menu->is_active;
         $menu->save();
 
@@ -597,11 +640,16 @@ class AdminController extends Controller
     {
         $defaultMenus = [
             ['title' => 'BERANDA', 'url' => '/', 'order' => 1],
-            ['title' => 'PROFIL DISHUB', 'url' => '#', 'order' => 2, 'children' => [
-                ['title' => 'Visi & Misi', 'url' => '/halaman/visi-misi', 'order' => 1],
-                ['title' => 'Struktur Organisasi', 'url' => '/halaman/struktur-organisasi', 'order' => 2],
-                ['title' => 'Tugas & Fungsi', 'url' => '/halaman/tugas-fungsi', 'order' => 3],
-            ]],
+            [
+                'title' => 'PROFIL DISHUB',
+                'url' => '#',
+                'order' => 2,
+                'children' => [
+                    ['title' => 'Visi & Misi', 'url' => '/halaman/visi-misi', 'order' => 1],
+                    ['title' => 'Struktur Organisasi', 'url' => '/halaman/struktur-organisasi', 'order' => 2],
+                    ['title' => 'Tugas & Fungsi', 'url' => '/halaman/tugas-fungsi', 'order' => 3],
+                ]
+            ],
             ['title' => 'BERITA & INFORMASI', 'url' => '/informasi', 'order' => 3],
             ['title' => 'DOKUMEN KINERJA', 'url' => '/dokumen', 'order' => 4],
             ['title' => 'KONTAK PENGADUAN', 'url' => '/kontak', 'order' => 5],
@@ -639,20 +687,24 @@ class AdminController extends Controller
             $query->where('title', 'like', '%' . $request->search . '%');
         }
         $newsList = $query->orderBy('published_at', 'desc')->paginate(10);
-        $tabCategories = InformasiTab::where('is_active', true)->whereNotNull('filter_value')->pluck('filter_value')->toArray();
-        $defaultCategories = ['Pemerintahan', 'Lalu Lintas', 'Pelayanan Publik'];
-        $categories = array_unique(array_merge($defaultCategories, $tabCategories));
+        $tabCategories = \App\Models\InformasiTab::where('is_active', true)
+                            ->whereNotNull('filter_value')
+                            ->where('filter_value', '!=', '')
+                            ->where('filter_value', '!=', 'Semua Berita')
+                            ->pluck('filter_value')
+                            ->toArray();
+        $categories = array_unique($tabCategories);
         return view('admin.news', compact('newsList', 'categories'));
     }
 
     public function newsStore(Request $request)
     {
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'content'      => 'nullable|string',
-            'category'     => 'nullable|string|max:100',
-            'image_file'   => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
-            'image_url'    => 'nullable|string',
+            'title' => 'required|string|max:255',
+            'content' => 'nullable|string',
+            'category' => 'nullable|string|max:100',
+            'image_file' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
+            'image_url' => 'nullable|string',
             'published_at' => 'nullable|date',
         ], [
             'image_file.mimes' => 'Gambar berita HANYA boleh berformat JPG, JPEG, atau PNG.',
@@ -678,14 +730,14 @@ class AdminController extends Controller
         }
 
         $news = NewsItem::create([
-            'title'        => $request->title,
-            'slug'         => Str::slug($request->title) . '-' . time(),
-            'summary'      => $request->summary ?? Str::limit(strip_tags($request->content), 120),
-            'content'      => $request->content,
-            'image_url'    => $imageUrl,
-            'category'     => $category,
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
+            'summary' => $request->summary ?? Str::limit(strip_tags($request->content), 120),
+            'content' => $request->content,
+            'image_url' => $imageUrl,
+            'category' => $category,
             'published_at' => $request->published_at ? $request->published_at : now(),
-            'created_by'   => auth()->id(),
+            'created_by' => auth()->id(),
         ]);
 
         ActivityLog::record('TAMBAH_BERITA', "Menambahkan berita baru \"{$news->title}\" pada kategori [{$news->category}].");
@@ -711,12 +763,12 @@ class AdminController extends Controller
             }
 
             InformasiTab::create([
-                'name'         => $category,
-                'slug'         => $slug,
-                'icon'         => 'fas fa-newspaper',
-                'order'        => $maxOrder + 1,
-                'is_active'    => true,
-                'filter_type'  => 'category',
+                'name' => $category,
+                'slug' => $slug,
+                'icon' => 'fas fa-newspaper',
+                'order' => $maxOrder + 1,
+                'is_active' => true,
+                'filter_type' => 'category',
                 'filter_value' => $category,
             ]);
         }
@@ -725,11 +777,14 @@ class AdminController extends Controller
     public function newsUpdate(Request $request, $id)
     {
         $news = NewsItem::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $news->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit data milik pengguna lain.');
+        }
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'content'      => 'nullable|string',
-            'category'     => 'nullable|string|max:100',
-            'image_file'   => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
+            'title' => 'required|string|max:255',
+            'content' => 'nullable|string',
+            'category' => 'nullable|string|max:100',
+            'image_file' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
             'published_at' => 'nullable|date',
         ], [
             'image_file.mimes' => 'Gambar berita HANYA boleh berformat JPG, JPEG, atau PNG.',
@@ -751,13 +806,13 @@ class AdminController extends Controller
         }
 
         $news->update([
-            'title'        => $request->title,
-            'summary'      => $request->summary ?? Str::limit(strip_tags($request->content), 120),
-            'content'      => $request->content,
-            'image_url'    => $imageUrl,
-            'category'     => $category,
+            'title' => $request->title,
+            'summary' => $request->summary ?? Str::limit(strip_tags($request->content), 120),
+            'content' => $request->content,
+            'image_url' => $imageUrl,
+            'category' => $category,
             'published_at' => $request->published_at ? $request->published_at : $news->published_at,
-            'created_by'   => $news->created_by ?: auth()->id(),
+            'created_by' => $news->created_by ?: auth()->id(),
         ]);
 
         ActivityLog::record('EDIT_BERITA', "Memperbarui data berita \"{$news->title}\".");
@@ -768,7 +823,11 @@ class AdminController extends Controller
     public function newsDestroy($id)
     {
         $news = NewsItem::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $news->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data milik pengguna lain.');
+        }
         $title = $news->title;
+        $this->deleteLocalFile($news->image_url);
         $news->delete();
 
         ActivityLog::record('HAPUS_BERITA', "Menghapus artikel berita \"{$title}\".");
@@ -820,7 +879,7 @@ class AdminController extends Controller
         }
 
         $category = $request->filled('custom_category') ? trim($request->custom_category) : $request->category;
-        
+
         $type = $request->type;
         if (!$type) {
             $type = 'perencanaan-kinerja';
@@ -869,6 +928,9 @@ class AdminController extends Controller
     public function documentUpdate(Request $request, $id)
     {
         $doc = PublicDocument::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $doc->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit data milik pengguna lain.');
+        }
         $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'nullable|string',
@@ -921,15 +983,15 @@ class AdminController extends Controller
         }
 
         $doc->update([
-            'title'         => $request->title,
-            'type'          => $type,
-            'category'      => $category,
-            'tahun'         => $request->tahun ?? $doc->tahun,
-            'file_path'     => $pdfPath,
-            'file_url'      => $pdfUrl,
+            'title' => $request->title,
+            'type' => $type,
+            'category' => $category,
+            'tahun' => $request->tahun ?? $doc->tahun,
+            'file_path' => $pdfPath,
+            'file_url' => $pdfUrl,
             'file_zip_path' => $zipPath,
-            'file_zip_url'  => $zipUrl,
-            'created_by'    => $doc->created_by ?: auth()->id(),
+            'file_zip_url' => $zipUrl,
+            'created_by' => $doc->created_by ?: auth()->id(),
         ]);
 
         ActivityLog::record('EDIT_DOKUMEN', "Memperbarui data dokumen publik \"{$doc->title}\".");
@@ -940,7 +1002,23 @@ class AdminController extends Controller
     public function documentDestroy($id)
     {
         $doc = PublicDocument::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $doc->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data milik pengguna lain.');
+        }
         $title = $doc->title;
+        // Delete local files
+        if ($doc->file_path && file_exists(public_path($doc->file_path))) {
+            unlink(public_path($doc->file_path));
+        } elseif ($doc->file_url) {
+            $this->deleteLocalFile($doc->file_url);
+        }
+        
+        if ($doc->file_zip_path && file_exists(public_path($doc->file_zip_path))) {
+            unlink(public_path($doc->file_zip_path));
+        } elseif ($doc->file_zip_url) {
+            $this->deleteLocalFile($doc->file_zip_url);
+        }
+
         $doc->delete();
 
         ActivityLog::record('HAPUS_DOKUMEN', "Menghapus dokumen publik \"{$title}\".");
@@ -966,7 +1044,7 @@ class AdminController extends Controller
             'pdf_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Gambar halaman HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen halaman HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen halaman HANYA boleh berformat PDF.',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -1021,6 +1099,9 @@ class AdminController extends Controller
 
     public function pageUpdate(Request $request, $id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat memodifikasi data ini.');
+        }
         $page = Page::findOrFail($id);
 
         $request->validate([
@@ -1032,7 +1113,7 @@ class AdminController extends Controller
             'pdf_url' => 'nullable|string',
         ], [
             'image_file.mimes' => 'Gambar halaman HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen halaman HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen halaman HANYA boleh berformat PDF.',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -1081,6 +1162,9 @@ class AdminController extends Controller
 
     public function pageDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $page = Page::findOrFail($id);
         $title = $page->title;
         $page->delete();
@@ -1107,8 +1191,23 @@ class AdminController extends Controller
             'image_file.mimes' => 'Gambar widget HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
 
+        if ($request->has('image_file') && !$request->hasFile('image_file')) {
+            $fileError = $_FILES['image_file']['error'] ?? null;
+            if ($fileError === UPLOAD_ERR_INI_SIZE) {
+                return back()->with('error', 'Ukuran foto terlalu besar! Maksimal ukuran yang diperbolehkan server adalah ' . ini_get('upload_max_filesize'))->withInput();
+            }
+        }
+
         if ($request->hasFile('image_file')) {
             $this->validateStrictFile($request->file('image_file'), 'image', 'image_file');
+            
+            // Validasi Landscape
+            $imageInfo = getimagesize($request->file('image_file')->getPathname());
+            if ($imageInfo && $imageInfo[0] <= $imageInfo[1]) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'image_file' => 'File Tidak Valid! Banner sidebar harus berbentuk landscape (lebar > tinggi). Gambar portrait atau persegi tidak diperbolehkan.'
+                ]);
+            }
         }
 
         $imageUrl = $request->image_url;
@@ -1138,6 +1237,9 @@ class AdminController extends Controller
 
     public function widgetUpdate(Request $request, $id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat memodifikasi data ini.');
+        }
         $widget = SidebarWidget::findOrFail($id);
 
         $request->validate([
@@ -1148,8 +1250,23 @@ class AdminController extends Controller
             'image_file.mimes' => 'Gambar widget HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
 
+        if ($request->has('image_file') && !$request->hasFile('image_file')) {
+            $fileError = $_FILES['image_file']['error'] ?? null;
+            if ($fileError === UPLOAD_ERR_INI_SIZE) {
+                return back()->with('error', 'Ukuran foto terlalu besar! Maksimal ukuran yang diperbolehkan server adalah ' . ini_get('upload_max_filesize'))->withInput();
+            }
+        }
+
         if ($request->hasFile('image_file')) {
             $this->validateStrictFile($request->file('image_file'), 'image', 'image_file');
+            
+            // Validasi Landscape
+            $imageInfo = getimagesize($request->file('image_file')->getPathname());
+            if ($imageInfo && $imageInfo[0] <= $imageInfo[1]) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'image_file' => 'File Tidak Valid! Banner sidebar harus berbentuk landscape (lebar > tinggi). Gambar portrait atau persegi tidak diperbolehkan.'
+                ]);
+            }
         }
 
         $imageUrl = $request->image_url ?? $widget->image_url;
@@ -1175,6 +1292,9 @@ class AdminController extends Controller
 
     public function widgetDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $widget = SidebarWidget::findOrFail($id);
         $title = $widget->title;
         $widget->delete();
@@ -1232,6 +1352,9 @@ class AdminController extends Controller
 
     public function linkUpdate(Request $request, $id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat memodifikasi data ini.');
+        }
         $link = RelatedLink::findOrFail($id);
 
         $request->validate([
@@ -1269,6 +1392,9 @@ class AdminController extends Controller
 
     public function linkDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $link = RelatedLink::findOrFail($id);
         $title = $link->title;
         $link->delete();
@@ -1318,12 +1444,12 @@ class AdminController extends Controller
     public function userStore(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255',
-            'username'      => 'nullable|string|max:255|unique:users,username',
-            'email'         => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email'],
-            'whatsapp'      => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
+            'name' => 'required|string|max:255',
+            'username' => 'nullable|string|max:255|unique:users,username',
+            'email' => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email'],
+            'whatsapp' => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
             'referral_code' => ['nullable', 'string', 'regex:/^(?=(?:.*[a-zA-Z]){3})(?=(?:.*\d){3})[a-zA-Z\d]{6}$/'],
-            'password'      => [
+            'password' => [
                 'required',
                 'string',
                 'min:8',
@@ -1332,34 +1458,43 @@ class AdminController extends Controller
                 'regex:/[0-9]/',
                 'regex:/[@$!%*#?&^()_\-+=\[\]{}|\\:;<>,.]/'
             ],
-            'role'          => 'required|in:super_admin,admin,anggota',
+            'role' => 'required|in:developer,super_admin,admin,anggota',
         ], [
-            'name.required'       => 'Nama lengkap wajib diisi.',
-            'email.required'      => 'Email wajib diisi.',
-            'email.email'         => 'Format email tidak valid.',
-            'email.ends_with'     => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
-            'email.unique'        => 'Email ini sudah terdaftar. Silakan gunakan email lain.',
-            'username.unique'     => 'Username ini sudah digunakan. Silakan pilih username lain.',
-            'whatsapp.regex'      => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.ends_with' => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
+            'email.unique' => 'Email ini sudah terdaftar. Silakan gunakan email lain.',
+            'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
+            'whatsapp.regex' => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
             'referral_code.regex' => 'Kode Referral harus terdiri dari tepat 3 huruf dan 3 angka (total 6 karakter, contoh: ADI123).',
-            'password.required'   => 'Password wajib diisi.',
-            'password.min'        => 'Password minimal harus 8 karakter.',
-            'password.regex'      => 'Password wajib mengandung kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan kode unik/simbol (seperti @, #, $, %, !).',
-            'role.required'       => 'Role hak akses wajib dipilih.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal harus 8 karakter.',
+            'password.regex' => 'Password wajib mengandung kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan kode unik/simbol (seperti @, #, $, %, !).',
+            'role.required' => 'Role hak akses wajib dipilih.',
         ]);
 
         $username = $request->filled('username') ? trim($request->username) : null;
 
+        // Restriction: Regular admins cannot assign super_admin or developer
+        $currentUser = auth()->user();
+        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
+            if (in_array($request->role, ['super_admin', 'developer', 'admin'])) {
+                return redirect()->back()->with('error', 'Admin hanya diizinkan menambahkan akun dengan Role Anggota (User).')->withInput();
+            }
+        }
+
         $user = User::create([
-            'name'          => trim($request->name),
-            'username'      => $username,
-            'email'         => trim($request->email),
-            'whatsapp'      => $request->whatsapp ? trim($request->whatsapp) : null,
+            'name' => trim($request->name),
+            'username' => $username,
+            'email' => trim($request->email),
+            'whatsapp' => $request->whatsapp ? trim($request->whatsapp) : null,
             'referral_code' => $request->referral_code ? trim($request->referral_code) : null,
-            'password'      => Hash::make($request->password),
-            'role'          => $request->role,
-            'is_hidden'     => false,
-            'is_active'     => true,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'is_hidden' => false,
+            'is_active' => true,
+            'created_by' => auth()->id(),
         ]);
 
         ActivityLog::record('TAMBAH_USER', "Menambahkan pengguna baru \"{$user->name}\" ({$user->email}) dengan role [" . strtoupper($user->role) . "].");
@@ -1375,94 +1510,83 @@ class AdminController extends Controller
             return back()->with('error', 'Anda tidak memiliki akses untuk mengubah user ini!');
         }
 
-        if (auth()->user()->isSuperAdmin()) {
-            // Super Admin: Akses Lengkap (Name, Username, Email, WA, Referral Code, Role, Password)
-            $rules = [
-                'name'          => 'required|string|max:255',
-                'email'         => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email,' . $id],
-                'username'      => 'nullable|string|max:255|unique:users,username,' . $id,
-                'whatsapp'      => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
-                'referral_code' => ['nullable', 'string', 'regex:/^(?=(?:.*[a-zA-Z]){3})(?=(?:.*\d){3})[a-zA-Z\d]{6}$/'],
-                'role'          => 'required|in:super_admin,admin,anggota',
-            ];
+        $currentUser = auth()->user();
 
-            $messages = [
-                'name.required'       => 'Nama lengkap wajib diisi.',
-                'email.required'      => 'Email wajib diisi.',
-                'email.email'         => 'Format email tidak valid.',
-                'email.ends_with'     => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
-                'email.unique'        => 'Email ini sudah terdaftar pada akun lain.',
-                'username.unique'     => 'Username ini sudah digunakan pada akun lain.',
-                'whatsapp.regex'      => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
-                'referral_code.regex' => 'Kode Referral harus terdiri dari tepat 3 huruf dan 3 angka (total 6 karakter, contoh: ADI123).',
-                'role.required'       => 'Role hak akses wajib dipilih.',
-            ];
-
-            if ($request->filled('password')) {
-                $rules['password'] = [
-                    'string',
-                    'min:8',
-                    'regex:/[A-Z]/',
-                    'regex:/[a-z]/',
-                    'regex:/[0-9]/',
-                    'regex:/[@$!%*#?&^()_\-+=\[\]{}|\\:;<>,.]/'
-                ];
-                $messages['password.min']   = 'Password minimal harus 8 karakter.';
-                $messages['password.regex'] = 'Password wajib mengandung kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan kode unik/simbol (seperti @, #, $, %, !).';
+        // Restriction: Regular admins cannot edit super_admin or developer accounts, 
+        // and cannot edit users they didn't create (unless editing themselves).
+        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
+            if ($user->isSuperAdmin() || $user->isDeveloper()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengedit akun Super Admin atau Developer.');
             }
-
-            $request->validate($rules, $messages);
-
-            $username = $request->filled('username') ? trim($request->username) : null;
-
-            $data = [
-                'name'          => trim($request->name),
-                'username'      => $username,
-                'email'         => trim($request->email),
-                'whatsapp'      => $request->whatsapp ? trim($request->whatsapp) : null,
-                'referral_code' => $request->referral_code ? strtoupper(trim($request->referral_code)) : null,
-                'role'          => $request->role,
-            ];
-
-            if ($request->filled('password')) {
-                $data['password'] = Hash::make($request->password);
+            if ($user->id !== $currentUser->id && $user->created_by !== $currentUser->id) {
+                return redirect()->back()->with('error', 'Anda hanya dapat mengedit akun yang Anda tambahkan sendiri.');
             }
-
-            $user->update($data);
-
-            ActivityLog::record('EDIT_USER', "Memperbarui data pengguna \"{$user->name}\" (Role: " . strtoupper($user->role) . ").");
-
-            return back()->with('success', 'Data User berhasil diperbarui!');
-        } else {
-            // Admin Biasa: Hanya Memiliki Akses Mengubah Password
-            if ($request->filled('password')) {
-                $request->validate([
-                    'password' => [
-                        'required',
-                        'string',
-                        'min:8',
-                        'regex:/[A-Z]/',
-                        'regex:/[a-z]/',
-                        'regex:/[0-9]/',
-                        'regex:/[@$!%*#?&^()_\-+=\[\]{}|\\:;<>,.]/'
-                    ]
-                ], [
-                    'password.required' => 'Password wajib diisi jika ingin mengubah password user.',
-                    'password.min'      => 'Password minimal harus 8 karakter.',
-                    'password.regex'    => 'Password wajib mengandung kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan kode unik/simbol (seperti @, #, $, %, !).',
-                ]);
-
-                $user->update([
-                    'password' => Hash::make($request->password)
-                ]);
-
-                ActivityLog::record('EDIT_USER_PASSWORD', "Memperbarui password untuk pengguna \"{$user->name}\".");
-
-                return back()->with('success', "Password pengguna \"{$user->name}\" berhasil diperbarui!");
-            }
-
-            return back()->with('info', 'Tidak ada perubahan password yang dilakukan. (Perubahan nama/email/wa/role hanya untuk Super Admin)');
         }
+
+        // Akses Lengkap (Name, Username, Email, WA, Referral Code, Role, Password)
+        $rules = [
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', 'ends_with:@gmail.com', 'unique:users,email,' . $id],
+            'username' => 'nullable|string|max:255|unique:users,username,' . $id,
+            'whatsapp' => ['nullable', 'string', 'regex:/^0[0-9]{10,12}$/'],
+            'referral_code' => ['nullable', 'string', 'regex:/^(?=(?:.*[a-zA-Z]){3})(?=(?:.*\d){3})[a-zA-Z\d]{6}$/'],
+            'role' => 'required|in:developer,super_admin,admin,anggota',
+        ];
+
+        $messages = [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.ends_with' => 'Email wajib berakhiran @gmail.com (contoh: nama@gmail.com).',
+            'email.unique' => 'Email ini sudah terdaftar pada akun lain.',
+            'username.unique' => 'Username ini sudah digunakan pada akun lain.',
+            'whatsapp.regex' => 'No. WhatsApp harus diawali angka 0, hanya berupa angka, dan berpanjang 11 sampai 13 digit (contoh: 081234567890).',
+            'referral_code.regex' => 'Kode Referral harus terdiri dari tepat 3 huruf dan 3 angka (total 6 karakter, contoh: ADI123).',
+            'role.required' => 'Role hak akses wajib dipilih.',
+        ];
+
+        if ($request->filled('password')) {
+            $rules['password'] = [
+                'string',
+                'min:8',
+                'regex:/[A-Z]/',
+                'regex:/[a-z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*#?&^()_\-+=\[\]{}|\\:;<>,.]/'
+            ];
+            $messages['password.min'] = 'Password minimal harus 8 karakter.';
+            $messages['password.regex'] = 'Password wajib mengandung kombinasi huruf besar (A-Z), huruf kecil (a-z), angka (0-9), dan kode unik/simbol (seperti @, #, $, %, !).';
+        }
+
+        $request->validate($rules, $messages);
+
+        // Restriction: Regular admins cannot change roles to super_admin or developer
+        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
+            if (in_array($request->role, ['super_admin', 'developer'])) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah role menjadi Super Admin atau Developer.');
+            }
+        }
+
+        $username = $request->filled('username') ? trim($request->username) : null;
+
+        $data = [
+            'name' => trim($request->name),
+            'username' => $username,
+            'email' => trim($request->email),
+            'whatsapp' => $request->whatsapp ? trim($request->whatsapp) : null,
+            'referral_code' => $request->referral_code ? strtoupper(trim($request->referral_code)) : null,
+            'role' => $request->role,
+        ];
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        ActivityLog::record('EDIT_USER', "Memperbarui data pengguna \"{$user->name}\" (Role: " . strtoupper($user->role) . ").");
+
+        return back()->with('success', 'Data User berhasil diperbarui!');
     }
 
     public function userToggleStatus($id)
@@ -1496,6 +1620,16 @@ class AdminController extends Controller
             return back()->with('error', 'User terproteksi tidak dapat dihapus!');
         }
 
+        $currentUser = auth()->user();
+        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
+            if ($user->isSuperAdmin() || $user->isDeveloper()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus akun Super Admin atau Developer.');
+            }
+            if ($user->created_by !== $currentUser->id) {
+                return redirect()->back()->with('error', 'Anda hanya dapat menghapus akun yang Anda tambahkan sendiri.');
+            }
+        }
+
         $userName = $user->name;
         $userRole = $user->role;
         $user->delete();
@@ -1512,11 +1646,11 @@ class AdminController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('user_name', 'like', "%{$search}%")
-                  ->orWhere('action', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
+                    ->orWhere('action', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%");
             });
         }
 
@@ -1527,11 +1661,11 @@ class AdminController extends Controller
             } elseif ($filter === 'tambah') {
                 $query->where('action', 'like', 'TAMBAH%');
             } elseif ($filter === 'edit') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('action', 'like', 'EDIT%')
-                      ->orWhere('action', 'like', 'UPDATE%')
-                      ->orWhere('action', 'like', 'STATUS%')
-                      ->orWhere('action', 'like', 'TOGGLE%');
+                        ->orWhere('action', 'like', 'UPDATE%')
+                        ->orWhere('action', 'like', 'STATUS%')
+                        ->orWhere('action', 'like', 'TOGGLE%');
                 });
             } elseif ($filter === 'hapus') {
                 $query->where('action', 'like', 'HAPUS%');
@@ -1541,13 +1675,13 @@ class AdminController extends Controller
         $baseQuery = ActivityLog::query();
 
         if ($request->filled('year')) {
-            $year = (int)$request->year;
+            $year = (int) $request->year;
             $query->whereYear('created_at', $year);
             $baseQuery->whereYear('created_at', $year);
         }
-        
+
         if ($request->filled('month')) {
-            $month = (int)$request->month;
+            $month = (int) $request->month;
             $query->whereMonth('created_at', $month);
             $baseQuery->whereMonth('created_at', $month);
         }
@@ -1564,6 +1698,23 @@ class AdminController extends Controller
         return view('admin.activity_logs', compact('logs', 'stats'));
     }
 
+    public function destroyActivityLog($id)
+    {
+        $user = auth()->user();
+        $isDeveloper = $user && (strtolower($user->username) === 'aditya' || $user->email === 'aditya.developer@dishub.probolinggokab.go.id');
+        
+        if (!$isDeveloper) {
+            return back()->with('error', 'Akses Ditolak: Hanya Developer yang dapat menghapus log tertentu.');
+        }
+
+        $log = ActivityLog::findOrFail($id);
+        $log->delete();
+        return back()->with('success', 'Log aktivitas tertentu berhasil dihapus!');
+    }
+
+
+
+
     // --- 11. SITE SETTINGS ---
     public function settings()
     {
@@ -1573,24 +1724,28 @@ class AdminController extends Controller
 
     public function settingsUpdate(Request $request)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat mengubah pengaturan situs.');
+        }
+
         $request->validate([
-            'file_logo_frontend'  => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
-            'file_logo_backend'   => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
-            'file_favicon'        => 'nullable|file|mimes:jpeg,png,jpg,ico|max:5120',
+            'file_logo_frontend' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
+            'file_logo_backend' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
+            'file_favicon' => 'nullable|file|mimes:jpeg,png,jpg,ico|max:5120',
             'file_logo_berakhlak' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
             'file_qr_code_survey' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
         ], [
-            'file_logo_frontend.mimes'  => 'Logo Frontend HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'file_logo_backend.mimes'   => 'Logo Backend HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'file_favicon.mimes'        => 'Favicon HANYA boleh berformat ICO, PNG, JPG, atau JPEG.',
+            'file_logo_frontend.mimes' => 'Logo Frontend HANYA boleh berformat JPG, JPEG, atau PNG.',
+            'file_logo_backend.mimes' => 'Logo Backend HANYA boleh berformat JPG, JPEG, atau PNG.',
+            'file_favicon.mimes' => 'Favicon HANYA boleh berformat ICO, PNG, JPG, atau JPEG.',
             'file_logo_berakhlak.mimes' => 'Logo Berakhlak HANYA boleh berformat JPG, JPEG, atau PNG.',
             'file_qr_code_survey.mimes' => 'QR Code Survey HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
 
         $fileKeys = [
-            'file_logo_frontend'  => ['logo_frontend', 'image'],
-            'file_logo_backend'   => ['logo_backend', 'image'],
-            'file_favicon'        => ['favicon', 'favicon'],
+            'file_logo_frontend' => ['logo_frontend', 'image'],
+            'file_logo_backend' => ['logo_backend', 'image'],
+            'file_favicon' => ['favicon', 'favicon'],
             'file_logo_berakhlak' => ['logo_berakhlak', 'image'],
             'file_qr_code_survey' => ['qr_code_survey', 'image'],
         ];
@@ -1607,7 +1762,7 @@ class AdminController extends Controller
         if ($request->filled('instagram_username') || $request->filled('instagram_url')) {
             $rawIg = trim($request->input('instagram_username') ?? $request->input('instagram_url'));
             $rawIg = ltrim($rawIg, '@');
-            
+
             // Extract username from full URL if pasted
             if (preg_match('/instagram\.com\/([a-zA-Z0-9_\.]+)/i', $rawIg, $matches)) {
                 $cleanUsername = rtrim($matches[1], '/');
@@ -1623,9 +1778,9 @@ class AdminController extends Controller
 
         // Handle file uploads for Settings Logos, Favicon & QR Code
         $fileKeys = [
-            'file_logo_frontend'  => 'logo_frontend',
-            'file_logo_backend'   => 'logo_backend',
-            'file_favicon'        => 'favicon',
+            'file_logo_frontend' => 'logo_frontend',
+            'file_logo_backend' => 'logo_backend',
+            'file_favicon' => 'favicon',
             'file_logo_berakhlak' => 'logo_berakhlak',
             'file_qr_code_survey' => 'qr_code_survey',
         ];
@@ -1716,6 +1871,9 @@ class AdminController extends Controller
 
     public function orgChartUpdate(Request $request, $id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat memodifikasi data ini.');
+        }
         $node = OrgChart::findOrFail($id);
         $request->validate([
             'title' => 'required|string|max:255',
@@ -1762,6 +1920,9 @@ class AdminController extends Controller
 
     public function orgChartDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $node = OrgChart::findOrFail($id);
         $title = $node->title;
         $node->delete();
@@ -1784,9 +1945,9 @@ class AdminController extends Controller
         $parent = NavigationMenu::where('title', 'LAYANAN')->first();
         if (!$parent) {
             $parent = NavigationMenu::create([
-                'title'     => 'LAYANAN',
-                'url'       => '#',
-                'order'     => 3,
+                'title' => 'LAYANAN',
+                'url' => '#',
+                'order' => 3,
                 'is_active' => true,
             ]);
         }
@@ -1796,22 +1957,22 @@ class AdminController extends Controller
 
         // Tambahkan submenu utama "Semua Layanan Publik DISHUB"
         NavigationMenu::create([
-            'title'     => 'Semua Layanan Publik DISHUB',
-            'url'       => '/layanan',
+            'title' => 'Semua Layanan Publik DISHUB',
+            'url' => '/layanan',
             'parent_id' => $parent->id,
-            'order'     => 1,
+            'order' => 0, // Ditaruh paling atas
             'is_active' => true,
         ]);
 
         // Tambahkan tiap layanan aktif secara otomatis
         $activeServices = Service::where('is_active', true)->orderBy('order', 'asc')->get();
-        $order = 2;
+        $order = 1;
         foreach ($activeServices as $svc) {
             NavigationMenu::create([
-                'title'     => $svc->title,
-                'url'       => '/layanan/' . $svc->slug,
+                'title' => $svc->title,
+                'url' => '/layanan/' . $svc->slug,
                 'parent_id' => $parent->id,
-                'order'     => $order++,
+                'order' => $order++,
                 'is_active' => true,
             ]);
         }
@@ -1820,18 +1981,18 @@ class AdminController extends Controller
     public function serviceStore(Request $request)
     {
         $request->validate([
-            'title'       => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'content'     => 'nullable|string',
-            'image_url'   => 'nullable|string',
-            'image_file'  => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
-            'pdf_file'    => 'nullable|file|mimes:pdf|max:25600',
-            'pdf_url'     => 'nullable|string',
-            'icon'        => 'nullable|string|max:100',
-            'category'    => 'nullable|string|max:100',
+            'content' => 'nullable|string',
+            'image_url' => 'nullable|string',
+            'image_file' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
+            'pdf_file' => 'nullable|file|mimes:pdf|max:25600',
+            'pdf_url' => 'nullable|string',
+            'icon' => 'nullable|string|max:100',
+            'category' => 'nullable|string|max:100',
         ], [
             'image_file.mimes' => 'Gambar layanan HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen layanan HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen layanan HANYA boleh berformat PDF.',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -1861,17 +2022,17 @@ class AdminController extends Controller
         $defaultOrder = max(0, $minOrder - 1);
 
         $service = Service::create([
-            'title'       => $request->title,
-            'slug'        => Str::slug($request->title) . '-' . time(),
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
             'description' => $request->description,
-            'content'     => $request->content,
-            'image_url'   => $imageUrl,
-            'pdf_url'     => $pdfUrl,
-            'icon'        => $request->icon ?? 'fas fa-cogs',
-            'category'    => $request->category ?? 'Umum',
-            'order'       => $request->filled('order') ? (int)$request->order : $defaultOrder,
-            'is_active'   => $request->has('is_active'),
-            'created_by'  => auth()->id(),
+            'content' => $request->content,
+            'image_url' => $imageUrl,
+            'pdf_url' => $pdfUrl,
+            'icon' => $request->icon ?? 'fas fa-cogs',
+            'category' => $request->category ?? 'Umum',
+            'order' => $request->filled('order') ? (int) $request->order : $defaultOrder,
+            'is_active' => $request->has('is_active'),
+            'created_by' => auth()->id(),
         ]);
 
         $this->syncServicesToNavigationMenu();
@@ -1887,7 +2048,7 @@ class AdminController extends Controller
         $direction = $request->direction;
 
         $allServices = Service::orderBy('order', 'asc')->orderBy('created_at', 'desc')->get();
-        $currentIndex = $allServices->search(function($item) use ($id) {
+        $currentIndex = $allServices->search(function ($item) use ($id) {
             return $item->id == $id;
         });
 
@@ -1916,7 +2077,7 @@ class AdminController extends Controller
             $service->save();
             $nextItem->save();
         } elseif ($request->filled('position')) {
-            $targetPos = (int)$request->position;
+            $targetPos = (int) $request->position;
             $allServices = $allServices->reject(fn($i) => $i->id == $id)->values();
             $allServices->splice(max(0, $targetPos - 1), 0, [$service]);
 
@@ -1934,13 +2095,16 @@ class AdminController extends Controller
     public function serviceUpdate(Request $request, $id)
     {
         $service = Service::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $service->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit data milik pengguna lain.');
+        }
         $request->validate([
-            'title'      => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'image_file' => 'nullable|file|mimes:jpeg,png,jpg|max:5120',
-            'pdf_file'   => 'nullable|file|mimes:pdf|max:25600',
+            'pdf_file' => 'nullable|file|mimes:pdf|max:25600',
         ], [
             'image_file.mimes' => 'Gambar layanan HANYA boleh berformat JPG, JPEG, atau PNG.',
-            'pdf_file.mimes'   => 'Dokumen layanan HANYA boleh berformat PDF.',
+            'pdf_file.mimes' => 'Dokumen layanan HANYA boleh berformat PDF.',
         ]);
 
         if ($request->hasFile('image_file')) {
@@ -1967,17 +2131,17 @@ class AdminController extends Controller
         }
 
         $service->update([
-            'title'       => $request->title,
-            'slug'        => Str::slug($request->title),
+            'title' => $request->title,
+            'slug' => Str::slug($request->title),
             'description' => $request->description,
-            'content'     => $request->content,
-            'image_url'   => $imageUrl,
-            'pdf_url'     => $pdfUrl,
-            'icon'        => $request->icon ?? $service->icon,
-            'category'    => $request->category ?? $service->category,
-            'order'       => $request->order ?? 0,
-            'is_active'   => $request->has('is_active'),
-            'created_by'  => $service->created_by ?: auth()->id(),
+            'content' => $request->content,
+            'image_url' => $imageUrl,
+            'pdf_url' => $pdfUrl,
+            'icon' => $request->icon ?? $service->icon,
+            'category' => $request->category ?? $service->category,
+            'order' => $request->order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'created_by' => $service->created_by ?: auth()->id(),
         ]);
 
         $this->syncServicesToNavigationMenu();
@@ -1990,7 +2154,11 @@ class AdminController extends Controller
     public function serviceDestroy($id)
     {
         $service = Service::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $service->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data milik pengguna lain.');
+        }
         $title = $service->title;
+        $this->deleteLocalFile($service->icon_url);
         $service->delete();
 
         $this->syncServicesToNavigationMenu();
@@ -2015,12 +2183,12 @@ class AdminController extends Controller
         ]);
 
         $tab = InformasiTab::create([
-            'name'         => $request->name,
-            'slug'         => Str::slug($request->name) . '-' . time(),
-            'icon'         => $request->icon ?? 'fas fa-newspaper',
-            'order'        => $request->order ?? 0,
-            'is_active'    => $request->has('is_active'),
-            'filter_type'  => $request->filter_type ?? 'all',
+            'name' => $request->name,
+            'slug' => Str::slug($request->name) . '-' . time(),
+            'icon' => $request->icon ?? 'fas fa-newspaper',
+            'order' => $request->order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'filter_type' => $request->filter_type ?? 'all',
             'filter_value' => $request->filter_value,
         ]);
 
@@ -2031,15 +2199,18 @@ class AdminController extends Controller
 
     public function informasiTabUpdate(Request $request, $id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat memodifikasi data ini.');
+        }
         $tab = InformasiTab::findOrFail($id);
         $request->validate(['name' => 'required|string|max:100']);
 
         $tab->update([
-            'name'         => $request->name,
-            'icon'         => $request->icon ?? $tab->icon,
-            'order'        => $request->order ?? 0,
-            'is_active'    => $request->has('is_active'),
-            'filter_type'  => $request->filter_type ?? 'all',
+            'name' => $request->name,
+            'icon' => $request->icon ?? $tab->icon,
+            'order' => $request->order ?? 0,
+            'is_active' => $request->has('is_active'),
+            'filter_type' => $request->filter_type ?? 'all',
             'filter_value' => $request->filter_value,
         ]);
 
@@ -2050,6 +2221,9 @@ class AdminController extends Controller
 
     public function informasiTabDestroy($id)
     {
+        if (!auth()->user()->isSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin yang dapat menghapus data ini.');
+        }
         $tab = InformasiTab::findOrFail($id);
         $name = $tab->name;
         $tab->delete();
@@ -2065,7 +2239,7 @@ class AdminController extends Controller
         $query = VideoItem::with('creator')->orderBy('created_at', 'desc');
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%');
+                ->orWhere('description', 'like', '%' . $request->search . '%');
         }
         $videos = $query->paginate(12);
         return view('admin.videos', compact('videos'));
@@ -2074,12 +2248,12 @@ class AdminController extends Controller
     public function videoStore(Request $request)
     {
         $request->validate([
-            'title'          => 'required|string|max:255',
-            'video_url'      => 'required|string|max:500',
+            'title' => 'required|string|max:255',
+            'video_url' => 'required|string|max:500',
             'thumbnail_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'thumbnail_url'  => 'nullable|string|max:500',
-            'description'    => 'nullable|string',
-            'published_at'   => 'nullable|date',
+            'thumbnail_url' => 'nullable|string|max:500',
+            'description' => 'nullable|string',
+            'published_at' => 'nullable|date',
         ], [
             'thumbnail_file.mimes' => 'Thumbnail video HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
@@ -2104,13 +2278,13 @@ class AdminController extends Controller
         }
 
         $video = VideoItem::create([
-            'title'         => $request->title,
-            'slug'          => Str::slug($request->title) . '-' . time(),
-            'video_url'     => $request->video_url,
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
+            'video_url' => $request->video_url,
             'thumbnail_url' => $thumbnailUrl,
-            'description'   => $request->description,
-            'published_at'  => $request->published_at ?? now(),
-            'created_by'    => auth()->id(),
+            'description' => $request->description,
+            'published_at' => $request->published_at ?? now(),
+            'created_by' => auth()->id(),
         ]);
 
         ActivityLog::record('TAMBAH_VIDEO', "Menambahkan video dokumentasi baru \"{$video->title}\".");
@@ -2121,14 +2295,17 @@ class AdminController extends Controller
     public function videoUpdate(Request $request, $id)
     {
         $video = VideoItem::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $video->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit data milik pengguna lain.');
+        }
 
         $request->validate([
-            'title'          => 'required|string|max:255',
-            'video_url'      => 'required|string|max:500',
+            'title' => 'required|string|max:255',
+            'video_url' => 'required|string|max:500',
             'thumbnail_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'thumbnail_url'  => 'nullable|string|max:500',
-            'description'    => 'nullable|string',
-            'published_at'   => 'nullable|date',
+            'thumbnail_url' => 'nullable|string|max:500',
+            'description' => 'nullable|string',
+            'published_at' => 'nullable|date',
         ], [
             'thumbnail_file.mimes' => 'Thumbnail video HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
@@ -2169,11 +2346,11 @@ class AdminController extends Controller
         }
 
         $video->update([
-            'title'         => $request->title,
-            'video_url'     => $request->video_url,
+            'title' => $request->title,
+            'video_url' => $request->video_url,
             'thumbnail_url' => $thumbnailUrl,
-            'description'   => $request->description,
-            'published_at'  => $request->published_at ? $request->published_at : $video->published_at,
+            'description' => $request->description,
+            'published_at' => $request->published_at ? $request->published_at : $video->published_at,
         ]);
 
         ActivityLog::record('EDIT_VIDEO', "Memperbarui video dokumentasi \"{$video->title}\".");
@@ -2184,6 +2361,9 @@ class AdminController extends Controller
     public function videoDestroy($id)
     {
         $video = VideoItem::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $video->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data milik pengguna lain.');
+        }
         $title = $video->title;
 
         // Hapus thumbnail lokal jika ada
@@ -2208,7 +2388,7 @@ class AdminController extends Controller
         $query = GalleryAlbum::with('creator')->orderBy('created_at', 'desc');
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%');
+                ->orWhere('description', 'like', '%' . $request->search . '%');
         }
         $albums = $query->paginate(12);
         return view('admin.gallery', compact('albums'));
@@ -2217,14 +2397,14 @@ class AdminController extends Controller
     public function galleryStore(Request $request)
     {
         $request->validate([
-            'title'          => 'required|string|max:255',
-            'description'    => 'nullable|string',
-            'cover_file'     => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'cover_image'    => 'nullable|string|max:500',
-            'photo_files.*'  => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'photo_urls'     => 'nullable|string',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'cover_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'cover_image' => 'nullable|string|max:500',
+            'photo_files.*' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'photo_urls' => 'nullable|string',
         ], [
-            'cover_file.mimes'    => 'Cover album HANYA boleh berformat JPG, JPEG, atau PNG.',
+            'cover_file.mimes' => 'Cover album HANYA boleh berformat JPG, JPEG, atau PNG.',
             'photo_files.*.mimes' => 'Foto galeri HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
 
@@ -2279,12 +2459,12 @@ class AdminController extends Controller
         }
 
         $album = GalleryAlbum::create([
-            'title'       => $request->title,
-            'slug'        => Str::slug($request->title) . '-' . time(),
+            'title' => $request->title,
+            'slug' => Str::slug($request->title) . '-' . time(),
             'description' => $request->description,
             'cover_image' => $coverUrl,
-            'photos'      => array_values(array_unique($photos)),
-            'created_by'  => auth()->id(),
+            'photos' => array_values(array_unique($photos)),
+            'created_by' => auth()->id(),
         ]);
 
         ActivityLog::record('TAMBAH_ALBUM_GALERI', "Menambahkan album galeri foto baru \"{$album->title}\" dengan " . count($photos) . " foto.");
@@ -2295,16 +2475,19 @@ class AdminController extends Controller
     public function galleryUpdate(Request $request, $id)
     {
         $album = GalleryAlbum::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $album->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit data milik pengguna lain.');
+        }
 
         $request->validate([
-            'title'          => 'required|string|max:255',
-            'description'    => 'nullable|string',
-            'cover_file'     => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'cover_image'    => 'nullable|string|max:500',
-            'photo_files.*'  => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'photo_urls'     => 'nullable|string',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'cover_file' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'cover_image' => 'nullable|string|max:500',
+            'photo_files.*' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'photo_urls' => 'nullable|string',
         ], [
-            'cover_file.mimes'    => 'Cover album HANYA boleh berformat JPG, JPEG, atau PNG.',
+            'cover_file.mimes' => 'Cover album HANYA boleh berformat JPG, JPEG, atau PNG.',
             'photo_files.*.mimes' => 'Foto galeri HANYA boleh berformat JPG, JPEG, atau PNG.',
         ]);
 
@@ -2332,7 +2515,7 @@ class AdminController extends Controller
         // Remove selected photos if requested
         if ($request->has('removed_photos') && is_array($request->removed_photos)) {
             $removed = $request->removed_photos;
-            $photos = array_values(array_filter($photos, function($p) use ($removed) {
+            $photos = array_values(array_filter($photos, function ($p) use ($removed) {
                 return !in_array($p, $removed);
             }));
         }
@@ -2361,10 +2544,10 @@ class AdminController extends Controller
         }
 
         $album->update([
-            'title'       => $request->title,
+            'title' => $request->title,
             'description' => $request->description,
             'cover_image' => $coverUrl,
-            'photos'      => array_values(array_unique($photos)),
+            'photos' => array_values(array_unique($photos)),
         ]);
 
         ActivityLog::record('EDIT_ALBUM_GALERI', "Memperbarui album galeri foto \"{$album->title}\".");
@@ -2375,6 +2558,9 @@ class AdminController extends Controller
     public function galleryDestroy($id)
     {
         $album = GalleryAlbum::findOrFail($id);
+        if (!auth()->user()->isSuperAdmin() && $album->created_by != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data milik pengguna lain.');
+        }
         $title = $album->title;
 
         // Delete local cover image
@@ -2419,7 +2605,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'feedback' => 'nullable|string',
-            'score'    => 'required|numeric|min:1|max:4'
+            'score' => 'required|numeric|min:1|max:4'
         ]);
 
         $survey = SurveyResponse::findOrFail($id);
@@ -2442,7 +2628,7 @@ class AdminController extends Controller
         foreach ($request->questions as $step => $text) {
             SurveyQuestion::updateOrCreate(
                 ['step_number' => $step],
-                ['question'    => $text]
+                ['question' => $text]
             );
         }
 
@@ -2454,20 +2640,20 @@ class AdminController extends Controller
     public function surveiStore(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'phone'    => 'required|string|max:20',
-            'gender'   => 'nullable|string|in:Laki-laki,Perempuan',
-            'age'      => 'nullable|integer|min:17|max:100',
-            'score'    => 'required|numeric|min:1|max:4',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'gender' => 'nullable|string|in:Laki-laki,Perempuan',
+            'age' => 'nullable|integer|min:17|max:100',
+            'score' => 'required|numeric|min:1|max:4',
             'feedback' => 'nullable|string',
         ]);
 
         SurveyResponse::create([
-            'name'     => $request->name,
-            'phone'    => $request->phone,
-            'gender'   => $request->gender,
-            'age'      => $request->age,
-            'score'    => $request->score,
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'gender' => $request->gender,
+            'age' => $request->age,
+            'score' => $request->score,
             'feedback' => $request->feedback,
         ]);
 
@@ -2482,8 +2668,26 @@ class AdminController extends Controller
         $name = $survey->name;
         $survey->delete();
 
-        ActivityLog::record('HAPUS_SURVEI', "Menghapus tanggapan survei milik responden {$name}.");
+        ActivityLog::record('HAPUS_RESPON_SURVEI', "Menghapus tanggapan survei masyarakat.");
+        return back()->with('success', 'Data respon survei berhasil dihapus!');
+    }
 
-        return back()->with('success', 'Tanggapan survei berhasil dihapus!');
+    /**
+     * Helper to delete local uploaded files by URL
+     */
+    private function deleteLocalFile($url)
+    {
+        if ($url && str_contains($url, 'uploads/')) {
+            $parsed = parse_url($url, PHP_URL_PATH);
+            // In laragon/windows, parse_url path might include the project folder if accessed via localhost/pkl_adit
+            // So we just take everything after 'uploads/'
+            if (preg_match('/uploads\/(.+)$/', $parsed, $matches)) {
+                $relativePath = 'uploads/' . $matches[1];
+                $oldPath = public_path($relativePath);
+                if (file_exists($oldPath) && is_file($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+        }
     }
 }
