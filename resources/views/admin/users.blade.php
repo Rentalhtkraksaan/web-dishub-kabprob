@@ -207,9 +207,13 @@
 
                             <!-- Role Badge -->
                             <td class="px-6 py-4">
-                                @if($user->isSuperAdmin())
-                                    <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] border border-yellow-300 inline-flex items-center gap-1.5 shadow-xs">
-                                        👑 Super Admin
+                                @if($user->isMasterSuperAdmin())
+                                    <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-slate-950 font-black text-[10px] border border-yellow-300 inline-flex items-center gap-1.5 shadow-sm">
+                                        👑 Super Admin Utama (Master)
+                                    </span>
+                                @elseif($user->isSuperAdmin())
+                                    <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-900 font-extrabold text-[10px] border border-yellow-300 inline-flex items-center gap-1.5 shadow-xs">
+                                        ⭐ Super Admin
                                     </span>
                                 @elseif($user->isAdmin())
                                     <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-extrabold text-[10px] border border-indigo-400 inline-flex items-center gap-1.5 shadow-xs">
@@ -219,6 +223,11 @@
                                     <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200 inline-flex items-center gap-1.5">
                                         👤 Anggota Staf
                                     </span>
+                                @endif
+                                @if($user->creator)
+                                    <p class="text-[9px] text-slate-400 mt-1 font-medium">
+                                        Oleh: {{ $user->creator->name ?? $user->creator->username }}
+                                    </p>
                                 @endif
                             </td>
 
@@ -238,27 +247,21 @@
                             </td>
 
                             <!-- Action Buttons -->
-                            <td class="px-6 py-4 text-right space-x-1.5">
+                            <td class="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
                                 @php
-                                    $canEdit = false;
                                     $me = auth()->user();
-                                    if ($me->isSuperAdmin() || $me->isDeveloper()) {
-                                        $canEdit = true;
-                                    } elseif ($me->isAdmin()) {
-                                        if (!$user->isSuperAdmin() && !$user->isDeveloper() && ($user->id === $me->id || $user->created_by === $me->id)) {
-                                            $canEdit = true;
-                                        }
-                                    }
+                                    $isSelf = ($me->id === $user->id);
+                                    $canManage = $me->canManageUser($user);
                                 @endphp
 
-                                @if($canEdit)
+                                @if($canManage || $isSelf)
                                     <button @click="showModal = true; editMode = true; passwordInput = ''; showPassword = false; currentUser = {{ json_encode($user) }}" 
                                             class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold rounded-xl transition text-[11px] inline-flex items-center gap-1.5 shadow-xs" title="Edit Akun & Role">
                                         <i class="fas fa-edit text-xs"></i> Edit
                                     </button>
                                 @endif
 
-                                @if($canEdit && auth()->id() !== $user->id)
+                                @if($canManage)
                                     <form action="{{ route('admin.users.toggle', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan kembali' }} pengguna {{ $user->name }}?')">
                                         @csrf
                                         @method('PATCH')
@@ -272,6 +275,20 @@
                                             </button>
                                         @endif
                                     </form>
+                                @elseif(!$isSelf)
+                                    @if($user->isMasterSuperAdmin())
+                                        <span class="px-2.5 py-1.5 bg-amber-50 text-amber-700 font-extrabold text-[10px] rounded-xl border border-amber-200 inline-flex items-center gap-1" title="Akun Master Terproteksi Penuh">
+                                            <i class="fas fa-shield-halved text-amber-600"></i> Master Terproteksi
+                                        </span>
+                                    @elseif($user->id === $me->created_by)
+                                        <span class="px-2.5 py-1.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-xl border border-blue-200 inline-flex items-center gap-1" title="Akun Pembuat (Anti-Kudeta)">
+                                            <i class="fas fa-crown text-blue-600"></i> Akun Pembuat
+                                        </span>
+                                    @elseif($user->isSuperAdmin())
+                                        <span class="px-2.5 py-1.5 bg-slate-100 text-slate-600 font-extrabold text-[10px] rounded-xl border border-slate-200 inline-flex items-center gap-1" title="Sesama Super Admin hanya dapat dikelola oleh Master">
+                                            <i class="fas fa-lock text-slate-500"></i> Terkunci
+                                        </span>
+                                    @endif
                                 @endif
                             </td>
                         </tr>
@@ -322,16 +339,24 @@
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Role Hak Akses <span class="text-rose-500">*</span></label>
-                            <select name="role" x-model="currentUser.role" class="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-blue-700">
+                            <select name="role" x-model="currentUser.role" 
+                                    :disabled="editMode && currentUser.role === 'super_admin' && !{{ auth()->user()->isMasterSuperAdmin() ? 'true' : 'false' }}"
+                                    class="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none font-bold text-blue-700 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed">
                                 <option value="anggota">👤 Anggota Staf</option>
-                                @if(auth()->user()->isSuperAdmin() || auth()->user()->isDeveloper())
+                                @if(auth()->user()->isMasterSuperAdmin())
                                     <option value="admin">👑 Admin</option>
                                     <option value="super_admin">⭐ Super Admin</option>
-                                    @if(auth()->user()->isDeveloper())
-                                        <option value="developer">👨‍💻 Developer</option>
-                                    @endif
+                                    <option value="developer">👨‍💻 Developer</option>
+                                @elseif(auth()->user()->isSuperAdmin())
+                                    <option value="admin">👑 Admin</option>
+                                    <template x-if="editMode && currentUser.role === 'super_admin'">
+                                        <option value="super_admin">⭐ Super Admin (Terkunci)</option>
+                                    </template>
                                 @endif
                             </select>
+                            <p x-show="editMode && currentUser.role === 'super_admin' && !{{ auth()->user()->isMasterSuperAdmin() ? 'true' : 'false' }}" class="text-[10px] text-amber-600 font-bold mt-1">
+                                <i class="fas fa-lock"></i> Hak akses Super Admin hanya dapat diubah oleh Master Super Admin.
+                            </p>
                         </div>
                     </div>
 

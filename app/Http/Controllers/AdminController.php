@@ -1436,8 +1436,15 @@ class AdminController extends Controller
     // --- 9. USERS & ROLES CRUD ---
     public function users()
     {
-        // Filter out hidden super admin (aditya) so it's not visible or editable in the UI
-        $users = User::where('is_hidden', false)->orderBy('created_at', 'desc')->get();
+        $currentUser = auth()->user();
+        $query = User::query();
+
+        // Non-master users cannot see Master Super Admin in the list
+        if (!$currentUser->isMasterSuperAdmin()) {
+            $query->where('is_hidden', false);
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->get();
         return view('admin.users', compact('users'));
     }
 
@@ -1476,11 +1483,16 @@ class AdminController extends Controller
 
         $username = $request->filled('username') ? trim($request->username) : null;
 
-        // Restriction: Regular admins cannot assign super_admin or developer
+        // Restriction on role assignment:
         $currentUser = auth()->user();
         if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
             if (in_array($request->role, ['super_admin', 'developer', 'admin'])) {
                 return redirect()->back()->with('error', 'Admin hanya diizinkan menambahkan akun dengan Role Anggota (User).')->withInput();
+            }
+        } elseif (!$currentUser->isMasterSuperAdmin()) {
+            // Sub-Super Admin (non-master) cannot create another super_admin or developer
+            if (in_array($request->role, ['super_admin', 'developer'])) {
+                return redirect()->back()->with('error', 'Hanya Super Admin Utama (Master) yang memiliki wewenang untuk menambahkan akun Super Admin atau Developer baru.')->withInput();
             }
         }
 
@@ -1505,21 +1517,45 @@ class AdminController extends Controller
     public function userUpdate(Request $request, $id)
     {
         $user = User::findOrFail($id);
-
-        if ($user->is_hidden && !auth()->user()->isSuperAdmin()) {
-            return back()->with('error', 'Anda tidak memiliki akses untuk mengubah user ini!');
-        }
-
         $currentUser = auth()->user();
 
-        // Restriction: Regular admins cannot edit super_admin or developer accounts, 
-        // and cannot edit users they didn't create (unless editing themselves).
+        // 1. Master Super Admin Protection (Immunity)
+        if ($user->isMasterSuperAdmin() && !$currentUser->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Akun Super Admin Utama (Master) memiliki proteksi penuh dan tidak dapat diubah oleh siapapun!');
+        }
+
+        // 2. Creator Protection (Anti-Coup Rule: Subordinates cannot edit their creator)
+        if ($currentUser->created_by === $user->id) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit akun yang membuat Anda (Akun Pembuat)!');
+        }
+
+        // 3. Peer Super Admin Protection
+        // Non-master super admins cannot edit or change other super admins
+        if ($user->isSuperAdmin() && $user->id !== $currentUser->id && !$currentUser->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin Utama (Master) yang memiliki wewenang untuk mengedit sesama Super Admin!');
+        }
+
+        // 4. Role Demotion Protection (Anti-Demotion)
+        // Super Admin role cannot be demoted except by Master Super Admin
+        if ($user->isSuperAdmin() && $request->role !== 'super_admin' && !$currentUser->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki wewenang untuk menurunkan hak akses Super Admin!');
+        }
+
+        // 5. Admin & Sub-Super Admin role restrictions
         if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
             if ($user->isSuperAdmin() || $user->isDeveloper()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengedit akun Super Admin atau Developer.');
             }
             if ($user->id !== $currentUser->id && $user->created_by !== $currentUser->id) {
                 return redirect()->back()->with('error', 'Anda hanya dapat mengedit akun yang Anda tambahkan sendiri.');
+            }
+            if (in_array($request->role, ['super_admin', 'developer', 'admin'])) {
+                return redirect()->back()->with('error', 'Admin hanya diizinkan menetapkan role Anggota.');
+            }
+        } elseif (!$currentUser->isMasterSuperAdmin()) {
+            // Sub-Super Admin cannot promote anyone to super_admin or developer
+            if (in_array($request->role, ['super_admin', 'developer']) && !$user->isSuperAdmin()) {
+                return redirect()->back()->with('error', 'Hanya Super Admin Utama (Master) yang memiliki wewenang untuk mengangkat akun menjadi Super Admin.');
             }
         }
 
@@ -1560,13 +1596,6 @@ class AdminController extends Controller
 
         $request->validate($rules, $messages);
 
-        // Restriction: Regular admins cannot change roles to super_admin or developer
-        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
-            if (in_array($request->role, ['super_admin', 'developer'])) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah role menjadi Super Admin atau Developer.');
-            }
-        }
-
         $username = $request->filled('username') ? trim($request->username) : null;
 
         $data = [
@@ -1596,8 +1625,31 @@ class AdminController extends Controller
         }
 
         $user = User::findOrFail($id);
-        if ($user->is_hidden) {
-            return back()->with('error', 'User terproteksi tidak dapat diubah statusnya!');
+        $currentUser = auth()->user();
+
+        // 1. Master Super Admin Protection
+        if ($user->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akun Super Admin Utama (Master) terproteksi dan tidak dapat dinonaktifkan!');
+        }
+
+        // 2. Creator Protection (Anti-Coup Rule)
+        if ($currentUser->created_by === $user->id) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak dapat menonaktifkan akun yang membuat Anda (Akun Pembuat)!');
+        }
+
+        // 3. Peer Super Admin Protection
+        if ($user->isSuperAdmin() && !$currentUser->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengubah status sesama Super Admin!');
+        }
+
+        // 4. Admin restrictions
+        if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
+            if ($user->isSuperAdmin() || $user->isDeveloper() || $user->isAdmin()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengubah status akun tersebut.');
+            }
+            if ($user->created_by !== $currentUser->id) {
+                return redirect()->back()->with('error', 'Anda hanya dapat mengubah status akun yang Anda tambahkan sendiri.');
+            }
         }
 
         $user->is_active = !$user->is_active;
@@ -1616,14 +1668,27 @@ class AdminController extends Controller
         }
 
         $user = User::findOrFail($id);
-        if ($user->is_hidden) {
-            return back()->with('error', 'User terproteksi tidak dapat dihapus!');
+        $currentUser = auth()->user();
+
+        // 1. Master Super Admin Protection
+        if ($user->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akun Super Admin Utama (Master) terproteksi dan tidak dapat dihapus!');
         }
 
-        $currentUser = auth()->user();
+        // 2. Creator Protection (Anti-Coup Rule)
+        if ($currentUser->created_by === $user->id) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak dapat menghapus akun yang membuat Anda (Akun Pembuat)!');
+        }
+
+        // 3. Peer Super Admin Protection
+        if ($user->isSuperAdmin() && !$currentUser->isMasterSuperAdmin()) {
+            return back()->with('error', 'Akses Ditolak: Hanya Super Admin Utama (Master) yang dapat menghapus akun Super Admin!');
+        }
+
+        // 4. Admin restrictions
         if ($currentUser->isAdmin() && !$currentUser->isSuperAdmin() && !$currentUser->isDeveloper()) {
-            if ($user->isSuperAdmin() || $user->isDeveloper()) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus akun Super Admin atau Developer.');
+            if ($user->isSuperAdmin() || $user->isDeveloper() || $user->isAdmin()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus akun tersebut.');
             }
             if ($user->created_by !== $currentUser->id) {
                 return redirect()->back()->with('error', 'Anda hanya dapat menghapus akun yang Anda tambahkan sendiri.');

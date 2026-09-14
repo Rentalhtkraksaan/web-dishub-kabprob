@@ -46,8 +46,8 @@ Route::get('/csrf-token', function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPasswordVerify'])->name('password.forgot.verify');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/forgot-password', [AuthController::class, 'forgotPasswordVerify'])->middleware('throttle:5,1')->name('password.forgot.verify');
 Route::get('/refresh_captcha', [AuthController::class, 'refreshCaptcha'])->name('captcha.refresh');
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -57,7 +57,7 @@ Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->nam
 |--------------------------------------------------------------------------
 */
 Route::get('/recovery', [RecoveryController::class, 'show'])->name('recovery');
-Route::post('/recovery', [RecoveryController::class, 'process']);
+Route::post('/recovery', [RecoveryController::class, 'process'])->middleware('throttle:5,5');
 
 /*
 |--------------------------------------------------------------------------
@@ -104,13 +104,11 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
     Route::get('/gallery', [AdminController::class, 'gallery'])->name('gallery');
     Route::post('/gallery', [AdminController::class, 'galleryStore'])->name('gallery.store');
     Route::put('/gallery/{id}', [AdminController::class, 'galleryUpdate'])->name('gallery.update');
-    Route::delete('/gallery/{id}', [AdminController::class, 'galleryDestroy'])->name('gallery.destroy');
 
     // 15. Video Kegiatan & Dokumentasi (Accessible by Anggota/Staf as well)
     Route::get('/videos', [AdminController::class, 'videos'])->name('videos');
     Route::post('/videos', [AdminController::class, 'videoStore'])->name('videos.store');
     Route::put('/videos/{id}', [AdminController::class, 'videoUpdate'])->name('videos.update');
-    Route::delete('/videos/{id}', [AdminController::class, 'videoDestroy'])->name('videos.destroy');
 
     // RESTRICTED TO ADMIN & SUPER ADMIN (View, Create, Edit):
     Route::middleware(['role:admin,super_admin'])->group(function () {
@@ -202,6 +200,8 @@ Route::middleware(['auth', 'role:anggota,staf,admin,super_admin'])->prefix('admi
         Route::delete('/links/{id}', [AdminController::class, 'linkDestroy'])->name('links.destroy');
         Route::delete('/messages/{id}', [AdminController::class, 'messageDestroy'])->name('messages.destroy');
         Route::delete('/users/{id}', [AdminController::class, 'userDestroy'])->name('users.destroy');
+        Route::delete('/gallery/{id}', [AdminController::class, 'galleryDestroy'])->name('gallery.destroy');
+        Route::delete('/videos/{id}', [AdminController::class, 'videoDestroy'])->name('videos.destroy');
         Route::delete('/informasi-tabs/{id}', [AdminController::class, 'informasiTabDestroy'])->name('informasi_tabs.destroy');
     });
 
